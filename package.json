@@ -1,0 +1,25 @@
+{
+  "name": "shieldvin",
+  "version": "1.0.0",
+  "description": "ShieldVIN — Cryptographic Vehicle Identity on Midnight Network. Concept proposal documents and financial model.",
+  "main": "src/docs/build_docx.js",
+  "scripts": {
+    "build": "bash scripts/build.sh",
+    "build:docx": "node src/docs/build_docx.js",
+    "build:excel": "python src/excel/build_excel.py",
+    "clean": "rm -f dist/*.docx dist/*.xlsx"
+  },
+  "keywords": [
+    "midnight-network",
+    "vehicle-identity",
+    "zero-knowledge-proofs",
+    "blockchain",
+    "vin-fraud",
+    "cardano"
+  ],
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "docx": "^8.5.0"
+  }
+}

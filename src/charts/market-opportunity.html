@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShieldVIN — Market Opportunity: Toyota × BYD × Ford US</title>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #040d1e;
+  --bg-card: #0b1629;
+  --bg-card2: #0f1e38;
+  --purple: #6d35e8;
+  --purple-light: #9b70f0;
+  --purple-glow: rgba(109,53,232,0.15);
+  --cyan: #00d4ff;
+  --cyan-dim: rgba(0,212,255,0.15);
+  --toyota-red: #eb0a1e;
+  --toyota-red-dim: rgba(235,10,30,0.15);
+  --byd-green: #1db954;
+  --byd-green-dim: rgba(29,185,84,0.15);
+  --ford-blue: #003882;
+  --ford-blue-bright: #1a6fcc;
+  --ford-blue-dim: rgba(26,111,204,0.15);
+  --combined: #f59e0b;
+  --combined-dim: rgba(245,158,11,0.15);
+  --text: #eef2ff;
+  --text-2: #94a3c0;
+  --text-3: #5a6a8a;
+  --border: rgba(109,53,232,0.25);
+  --font-h: 'Exo 2', sans-serif;
+  --font-b: 'IBM Plex Sans', sans-serif;
+  --font-m: 'IBM Plex Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-b);
+  min-height: 100vh;
+  padding: 2.5rem 2rem 4rem;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 10%, rgba(109,53,232,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 90%, rgba(0,212,255,0.04) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+
+.wrapper { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
+
+/* HEADER */
+.header { margin-bottom: 2.5rem; }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--cyan-dim); border: 1px solid rgba(0,212,255,0.2);
+  border-radius: 100px; padding: 5px 14px;
+  font-size: 0.75rem; font-weight: 600; color: var(--cyan);
+  letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;
+}
+.eyebrow::before {
+  content: ''; width: 7px; height: 7px; background: var(--cyan);
+  border-radius: 50%; animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+h1 {
+  font-family: var(--font-h); font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 0.75rem;
+}
+h1 span.t { color: var(--toyota-red); }
+h1 span.b { color: var(--byd-green); }
+h1 span.f { color: var(--ford-blue-bright); }
+h1 span.s { color: var(--cyan); }
+
+.subtitle { font-size: 0.95rem; color: var(--text-2); max-width: 680px; line-height: 1.7; }
+
+/* ASSUMPTION STRIP */
+.assumption-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+  background: var(--border); border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden; margin: 2rem 0;
+}
+.assum-box {
+  background: var(--bg-card); padding: 1.1rem 1.25rem;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.assum-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-3); font-weight: 600; }
+.assum-val { font-family: var(--font-h); font-size: 1.3rem; font-weight: 800; }
+.assum-sub { font-size: 0.72rem; color: var(--text-2); }
+.assum-val.red { color: var(--toyota-red); }
+.assum-val.green { color: var(--byd-green); }
+.assum-val.cyan { color: var(--cyan); }
+.assum-val.amber { color: var(--combined); }
+
+/* LEGEND */
+.legend {
+  display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.82rem; color: var(--text-2); font-weight: 500;
+}
+.legend-dot {
+  width: 12px; height: 12px; border-radius: 3px;
+}
+.dot-t { background: var(--toyota-red); }
+.dot-b { background: var(--byd-green); }
+.dot-f { background: var(--ford-blue-bright); }
+.dot-c { background: var(--combined); }
+.dot-p { background: var(--purple); }
+
+/* GRID */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 1.5rem; }
+
+/* CHART CARDS */
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.5rem;
+}
+.chart-card.full { grid-column: 1 / -1; }
+
+.chart-header { margin-bottom: 1.25rem; }
+.chart-title {
+  font-family: var(--font-h); font-size: 1rem; font-weight: 700;
+  color: var(--text); margin-bottom: 4px;
+}
+.chart-desc { font-size: 0.8rem; color: var(--text-2); }
+
+/* STAT CALLOUTS */
+.stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin: 1.5rem 0; }
+.stat-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1.25rem 1.5rem;
+  position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.stat-card.toyota::before { background: var(--toyota-red); }
+.stat-card.byd::before { background: var(--byd-green); }
+.stat-card.both::before { background: linear-gradient(90deg, var(--toyota-red), var(--byd-green)); }
+
+.stat-tag {
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em;
+  font-weight: 700; margin-bottom: 0.5rem;
+}
+.stat-tag.r { color: var(--toyota-red); }
+.stat-tag.g { color: var(--byd-green); }
+.stat-tag.a { color: var(--combined); }
+
+.stat-big {
+  font-family: var(--font-h); font-size: 2rem; font-weight: 800; line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-big.r { color: var(--toyota-red); }
+.stat-big.g { color: var(--byd-green); }
+.stat-big.a { color: var(--combined); }
+
+.stat-label { font-size: 0.8rem; color: var(--text-2); }
+
+/* SLIDER */
+.slider-wrap {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 1.5rem; margin-bottom: 1.5rem;
+}
+.slider-title {
+  font-family: var(--font-h); font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem;
+}
+.slider-desc { font-size: 0.8rem; color: var(--text-2); margin-bottom: 1.25rem; }
+
+.slider-controls { display: flex; gap: 3rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.slider-group { flex: 1; min-width: 200px; }
+.slider-label {
+  font-size: 0.78rem; font-weight: 600; color: var(--text-2);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  display: flex; justify-content: space-between; margin-bottom: 8px;
+}
+.slider-label span.val { color: var(--text); font-family: var(--font-m); }
+
+input[type=range] {
+  width: 100%; height: 4px; appearance: none;
+  background: rgba(109,53,232,0.2); border-radius: 100px; outline: none;
+}
+input[type=range].red::-webkit-slider-thumb {
+  appearance: none; width: 16px; height: 16px;
+  background: var(--toyota-red); border-radius: 50%; cursor: pointer;
+  border: 2px solid var(--bg);
+}
+input[type=range].green::-webkit-slider-thumb {
+  appearance: none; width: 16px; height: 16px;
+  background: var(--byd-green); border-radius: 50%; cursor: pointer;
+  border: 2px solid var(--bg);
+}
+input[type=range].blue::-webkit-slider-thumb {
+  appearance: none; width: 16px; height: 16px;
+  background: var(--ford-blue-bright); border-radius: 50%; cursor: pointer;
+  border: 2px solid var(--bg);
+}
+
+.output-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+  background: var(--border); border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+}
+.output-box {
+  background: var(--bg-card2); padding: 1rem;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.output-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); font-weight: 600; }
+.output-val { font-family: var(--font-h); font-size: 1.4rem; font-weight: 800; }
+
+/* SOURCE NOTE */
+.source {
+  font-size: 0.72rem; color: var(--text-3); margin-top: 2rem;
+  border-top: 1px solid rgba(109,53,232,0.12); padding-top: 1rem;
+  line-height: 1.8;
+}
+
+@media (max-width: 900px) {
+  .grid-3 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 700px) {
+  .grid-2, .grid-3, .stat-row { grid-template-columns: 1fr; }
+  .assumption-strip { grid-template-columns: 1fr 1fr; }
+  .output-grid { grid-template-columns: 1fr 1fr; }
+  #rawTable th, #rawTable td { font-size: 0.75rem; padding: 0.5rem 0.6rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="eyebrow">Market Opportunity Analysis</div>
+    <h1>If <span class="t">Toyota</span>, <span class="b">BYD</span> &amp; <span class="f">Ford US</span> adopted <span class="s">ShieldVIN</span></h1>
+    <p class="subtitle">
+      Toyota is the world's largest vehicle manufacturer by volume. BYD is China's largest and fastest-growing automaker. Ford is America's number one truck and commercial vehicle brand. Together, these three manufacturers represent over 17 million new vehicles per year — more than one in five cars built globally.
+    </p>
+  </div>
+
+  <!-- ASSUMPTION STRIP -->
+  <div class="assumption-strip" style="grid-template-columns:repeat(5,1fr);">
+    <div class="assum-box">
+      <div class="assum-label">Toyota — Annual Production</div>
+      <div class="assum-val red">10.5M</div>
+      <div class="assum-sub">Vehicles/year (2024, incl. Lexus)</div>
+    </div>
+    <div class="assum-box">
+      <div class="assum-label">BYD — Annual Production</div>
+      <div class="assum-val green">4.3M</div>
+      <div class="assum-sub">Vehicles/year (2024, growing to 5.5M+ by 2026)</div>
+    </div>
+    <div class="assum-box">
+      <div class="assum-label">Ford — US Sales Volume</div>
+      <div class="assum-val" style="color:var(--ford-blue-bright)">2.2M</div>
+      <div class="assum-sub">US wholesale units (2024, Ford 10-K SEC filing)</div>
+    </div>
+    <div class="assum-box">
+      <div class="assum-label">Combined Volume</div>
+      <div class="assum-val amber">17.0M</div>
+      <div class="assum-sub">New vehicles/year — 21.3% of global production</div>
+    </div>
+    <div class="assum-box">
+      <div class="assum-label">Minting Fee Assumed</div>
+      <div class="assum-val cyan">$9</div>
+      <div class="assum-sub">Per vehicle (volume tier for Tier 1 OEM)</div>
+    </div>
+  </div>
+
+  <!-- KEY STATS -->
+  <div class="stat-row" style="grid-template-columns:repeat(4,1fr);">
+    <div class="stat-card toyota">
+      <div class="stat-tag r">Toyota — Full Adoption</div>
+      <div class="stat-big r">$94.5M</div>
+      <div class="stat-label">Annual minting revenue at 100% Toyota enrollment</div>
+    </div>
+    <div class="stat-card byd">
+      <div class="stat-tag g">BYD — Full Adoption</div>
+      <div class="stat-big g">$38.7M</div>
+      <div class="stat-label">Annual minting revenue at 100% BYD enrollment</div>
+    </div>
+    <div class="stat-card" style="border-top:3px solid var(--ford-blue-bright);">
+      <div class="stat-tag" style="color:var(--ford-blue-bright);">Ford US — Full Adoption</div>
+      <div class="stat-big" style="color:var(--ford-blue-bright);">$19.8M</div>
+      <div class="stat-label">Annual minting revenue at 100% Ford US enrollment</div>
+    </div>
+    <div class="stat-card both">
+      <div class="stat-tag a">All Three — Year 1 Full</div>
+      <div class="stat-big a">$153M</div>
+      <div class="stat-label">Minting + API revenue, all three at 100% adoption</div>
+    </div>
+  </div>
+
+  <!-- ROW 1: BAR CHART + DONUT -->
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">Annual Vehicle Production — 2024</div>
+        <div class="chart-desc">Toyota (global), BYD (global) and Ford US vs global context (millions of units)</div>
+      </div>
+      <canvas id="chartVolume" height="280"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">ShieldVIN Revenue Split at 100% Adoption</div>
+        <div class="chart-desc">Annual minting fee revenue by manufacturer — Toyota, BYD and Ford US (USD millions)</div>
+      </div>
+      <canvas id="chartSplit" height="280"></canvas>
+    </div>
+  </div>
+
+  <!-- ROW 2: CUMULATIVE ENROLLMENT -->
+  <div class="chart-card" style="margin-bottom:1.5rem;">
+    <div class="chart-header">
+      <div class="chart-title">5-Year Cumulative Vehicle Enrollment — Phased Adoption Scenario</div>
+      <div class="chart-desc">Assumes gradual rollout: Toyota starting with select models in Year 1, BYD joining in Year 2. By Year 5, both at full production. Enrolled fleet grows cumulatively — these vehicles continue generating API verification revenue every year.</div>
+    </div>
+    <canvas id="chartEnrollment" height="220"></canvas>
+  </div>
+
+  <!-- ROW 3: REVENUE WATERFALL -->
+  <div class="chart-card" style="margin-bottom:1.5rem;">
+    <div class="chart-header">
+      <div class="chart-title">Annual Revenue Build — Minting Fees + API Verification (USD Millions)</div>
+      <div class="chart-desc">Each enrolled vehicle generates minting revenue once, then verification query revenue every year it remains in use. The fleet effect means API revenue compounds as enrollment grows.</div>
+    </div>
+    <div class="legend" style="margin-bottom:1rem;">
+      <div class="legend-item"><div class="legend-dot dot-t"></div>Toyota Minting</div>
+      <div class="legend-item"><div class="legend-dot dot-b"></div>BYD Minting</div>
+      <div class="legend-item"><div class="legend-dot dot-f"></div>Ford US Minting</div>
+      <div class="legend-item"><div class="legend-dot dot-p"></div>API Verification (growing fleet)</div>
+    </div>
+    <canvas id="chartRevenue" height="220"></canvas>
+  </div>
+
+  <!-- INTERACTIVE SLIDER -->
+  <div class="slider-wrap">
+    <div class="slider-title">Interactive: Explore Adoption Scenarios</div>
+    <div class="slider-desc">Adjust the adoption percentage for each manufacturer to see how revenue changes. Real-world rollout would be phased — starting with one model line and expanding.</div>
+
+    <div class="slider-controls">
+      <div class="slider-group">
+        <div class="slider-label">
+          Toyota Adoption Rate
+          <span class="val" id="toyotaVal">100%</span>
+        </div>
+        <input type="range" class="red" id="toyotaSlider" min="5" max="100" value="100" step="5" oninput="updateScenario()">
+      </div>
+      <div class="slider-group">
+        <div class="slider-label">
+          BYD Adoption Rate
+          <span class="val" id="bydVal">100%</span>
+        </div>
+        <input type="range" class="green" id="bydSlider" min="5" max="100" value="100" step="5" oninput="updateScenario()">
+      </div>
+      <div class="slider-group">
+        <div class="slider-label">
+          Ford US Adoption Rate
+          <span class="val" id="fordVal">100%</span>
+        </div>
+        <input type="range" class="blue" id="fordSlider" min="5" max="100" value="100" step="5" oninput="updateScenario()">
+      </div>
+    </div>
+
+    <div class="output-grid" style="grid-template-columns:repeat(5,1fr);">
+      <div class="output-box">
+        <div class="output-label">Toyota Vehicles/yr</div>
+        <div class="output-val" id="out-t-vol" style="color:var(--toyota-red)">10.5M</div>
+      </div>
+      <div class="output-box">
+        <div class="output-label">BYD Vehicles/yr</div>
+        <div class="output-val" id="out-b-vol" style="color:var(--byd-green)">4.3M</div>
+      </div>
+      <div class="output-box">
+        <div class="output-label">Ford US Vehicles/yr</div>
+        <div class="output-val" id="out-f-vol" style="color:var(--ford-blue-bright)">2.2M</div>
+      </div>
+      <div class="output-box">
+        <div class="output-label">Combined Annual Minting</div>
+        <div class="output-val" id="out-mint" style="color:var(--combined)">$153M</div>
+      </div>
+      <div class="output-box">
+        <div class="output-label">5-Year Total (incl. API)</div>
+        <div class="output-val" id="out-5yr" style="color:var(--cyan)">$1.01B</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCTION HISTORIES: BYD + FORD + GLOBAL SHARE -->
+  <div class="grid-3">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">BYD Production Growth Trajectory</div>
+        <div class="chart-desc">BYD's output is growing rapidly — making early adoption increasingly valuable</div>
+      </div>
+      <canvas id="chartBydGrowth" height="240"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">Ford US Production History (2019–2024)</div>
+        <div class="chart-desc">US wholesale volume — recovery from COVID and semiconductor supply chain disruption</div>
+      </div>
+      <canvas id="chartFordHistory" height="240"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">% of Global Production — ShieldVIN Context</div>
+        <div class="chart-desc">Toyota + BYD + Ford US = over 21% of all new vehicles globally</div>
+      </div>
+      <canvas id="chartGlobal" height="240"></canvas>
+    </div>
+  </div>
+
+  <!-- COMBINED REVENUE VS GLOBAL MARKET % -->
+  <div class="chart-card" style="margin-bottom:1.5rem;">
+    <div class="chart-header">
+      <div class="chart-title">Revenue Growth vs Global Market Penetration — 5-Year Phased Scenario</div>
+      <div class="chart-desc">Bars show total annual ShieldVIN revenue ($M). Line shows annual new-vehicle enrollment as a percentage of global production (80M units/year). As coverage expands, both curves accelerate.</div>
+    </div>
+    <div class="legend" style="margin-bottom:1rem;">
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(109,53,232,0.7)"></div>Total Annual Revenue ($M)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--cyan)"></div>% of Global Production Enrolled (right axis)</div>
+    </div>
+    <canvas id="chartCombinedPct" height="220"></canvas>
+  </div>
+
+  <!-- RAW NUMBERS TABLE -->
+  <div class="chart-card" style="margin-bottom:1.5rem;">
+    <div class="chart-header">
+      <div class="chart-title">Raw Numbers — Manufacturer Breakdown</div>
+      <div class="chart-desc">All figures at 100% adoption. Revenue based on $9 minting fee + $1/vehicle/year API blended rate (5 queries × $0.20).</div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table id="rawTable" style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+        <thead>
+          <tr style="border-bottom:1px solid rgba(109,53,232,0.3);">
+            <th style="text-align:left;padding:0.75rem 1rem;color:var(--text-2);font-weight:600;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;">Manufacturer</th>
+            <th style="text-align:right;padding:0.75rem 1rem;color:var(--text-2);font-weight:600;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;">2024 Annual Volume</th>
+            <th style="text-align:right;padding:0.75rem 1rem;color:var(--text-2);font-weight:600;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;">% of Global Production</th>
+            <th style="text-align:right;padding:0.75rem 1rem;color:var(--text-2);font-weight:600;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;">Annual Minting Revenue</th>
+            <th style="text-align:right;padding:0.75rem 1rem;color:var(--text-2);font-weight:600;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;">Annual API Revenue (yr 5)</th>
+            <th style="text-align:right;padding:0.75rem 1rem;color:var(--text-2);font-weight:600;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;">5-Year Cumulative Revenue</th>
+          </tr>
+        </thead>
+        <tbody id="rawTableBody"></tbody>
+        <tfoot>
+          <tr style="border-top:1px solid rgba(109,53,232,0.3);background:rgba(109,53,232,0.06);">
+            <td style="padding:0.75rem 1rem;font-family:var(--font-h);font-weight:700;color:var(--combined);">Combined (all three)</td>
+            <td style="text-align:right;padding:0.75rem 1rem;font-family:var(--font-m);font-weight:700;color:var(--combined);">17.0M units</td>
+            <td style="text-align:right;padding:0.75rem 1rem;font-family:var(--font-m);font-weight:700;color:var(--combined);">21.3%</td>
+            <td style="text-align:right;padding:0.75rem 1rem;font-family:var(--font-m);font-weight:700;color:var(--combined);">$153M / yr</td>
+            <td style="text-align:right;padding:0.75rem 1rem;font-family:var(--font-m);font-weight:700;color:var(--combined);">$42.5M / yr</td>
+            <td style="text-align:right;padding:0.75rem 1rem;font-family:var(--font-m);font-weight:700;color:var(--combined);">~$1.01B</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="source">
+    <strong style="color:var(--text-2)">Data Sources & Assumptions:</strong><br>
+    Toyota annual production: ~10.5M units (2024, including Daihatsu and Hino subsidiaries — Toyota Motor Corporation official reports / Statista).<br>
+    BYD annual production: 4.304M units (2024 — BYD official sales report, January 2025). BYD growth projection to 5.5M by 2026 based on reported capacity of 5.82M and stated 2025 sales targets of 5–6M units.<br>
+    Ford US volume: 2.2M wholesale units (2024 — Ford Motor Company Form 10-K, SEC filing, January 2025). Ford US is Ford's single largest market representing ~49% of global volume.<br>
+    Global new vehicle production: ~80M units/year (OICA 2024 estimate).<br>
+    Minting fee: $9 per vehicle (volume tier for Tier 1 OEM — see ShieldVIN business model).<br>
+    API verification revenue: Assumed 5 queries per enrolled vehicle per year at $0.20 average blended rate.<br>
+    All financial figures are illustrative projections based on the ShieldVIN model assumptions. This is not a guarantee of future revenue.
+  </div>
+
+</div>
+
+<script>
+// ─── DATA ───
+const TOYOTA_VOL = 10.5;   // M units
+const BYD_VOL_2024 = 4.3;  // M units
+const FORD_VOL = 2.2;       // M units — US wholesale 2024 (Ford 10-K)
+const FEE = 9;              // $ per vehicle
+const QUERIES_PER_VEH = 5;
+const QUERY_PRICE = 0.20;
+
+// Toyota production 2019–2024 (M units)
+const toyotaHistory = [10.74, 9.53, 9.27, 9.53, 10.13, 10.5];
+// BYD production 2019–2024 (M units)
+const bydHistory = [0.45, 0.43, 0.59, 1.87, 3.02, 4.3];
+// Ford US 2019–2024 (M units)
+const fordHistory = [2.42, 1.90, 1.91, 2.01, 2.10, 2.20];
+const histYears = ['2019','2020','2021','2022','2023','2024'];
+
+// Phased enrollment scenario (% of full production adopted each year)
+const toyotaPhase = [0.10, 0.30, 0.60, 0.85, 1.0];
+const bydPhase    = [0.00, 0.15, 0.40, 0.75, 1.0];
+const fordPhase   = [0.05, 0.20, 0.50, 0.80, 1.0]; // Ford joins early Y1 — US regulatory familiarity
+const years5 = ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'];
+
+function calcPhased(toyotaPct = 1, bydPct = 1, fordPct = 1) {
+  const tMint = [], bMint = [], fMint = [], api = [];
+  let cumFleet = 0;
+  for (let i = 0; i < 5; i++) {
+    const t = TOYOTA_VOL * toyotaPhase[i] * toyotaPct;
+    const b = (BYD_VOL_2024 + i * 0.3) * bydPhase[i] * bydPct;
+    const f = (FORD_VOL + i * 0.05) * fordPhase[i] * fordPct;
+    cumFleet += t + b + f;
+    tMint.push(+(t * FEE).toFixed(1));
+    bMint.push(+(b * FEE).toFixed(1));
+    fMint.push(+(f * FEE).toFixed(1));
+    api.push(+(cumFleet * QUERIES_PER_VEH * QUERY_PRICE).toFixed(1));
+  }
+  return { tMint, bMint, fMint, api, cumFleet };
+}
+
+// ─── CHART HELPERS ───
+const FONT = "'IBM Plex Sans'";
+const gridColor = 'rgba(109,53,232,0.08)';
+const tickStyle = { color: '#5a6a8a', font: { family: FONT, size: 11 } };
+
+// Chart 1: Volume comparison
+new Chart(document.getElementById('chartVolume'), {
+  type: 'bar',
+  data: {
+    labels: ['Toyota\n(Global)', 'BYD\n(Global)', 'VW Group\n(Global)', 'Ford US\n(US market)', 'Stellantis\n(Global)', 'Rest of\nWorld'],
+    datasets: [{
+      label: 'Annual Production (M units)',
+      data: [10.5, 4.3, 9.2, 2.2, 6.1, 47.7],
+      backgroundColor: [
+        'rgba(235,10,30,0.75)',
+        'rgba(29,185,84,0.75)',
+        'rgba(109,53,232,0.35)',
+        'rgba(26,111,204,0.8)',
+        'rgba(109,53,232,0.25)',
+        'rgba(90,106,138,0.2)',
+      ],
+      borderColor: [
+        'rgba(235,10,30,1)',
+        'rgba(29,185,84,1)',
+        'rgba(109,53,232,0.6)',
+        'rgba(26,111,204,1)',
+        'rgba(109,53,232,0.4)',
+        'rgba(90,106,138,0.3)',
+      ],
+      borderWidth: 1.5,
+      borderRadius: 5,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y}M vehicles/year` } }
+    },
+    scales: {
+      x: { ticks: { ...tickStyle, maxRotation: 0 }, grid: { color: gridColor } },
+      y: { ticks: { ...tickStyle, callback: v => v + 'M' }, grid: { color: gridColor } }
+    }
+  }
+});
+
+// Chart 2: Revenue donut
+new Chart(document.getElementById('chartSplit'), {
+  type: 'doughnut',
+  data: {
+    labels: [
+      'Toyota minting ($94.5M)',
+      'BYD minting ($38.7M)',
+      'Ford US minting ($19.8M)',
+      'API — Toyota fleet',
+      'API — BYD fleet',
+      'API — Ford fleet',
+    ],
+    datasets: [{
+      data: [94.5, 38.7, 19.8, 26.2, 10.8, 5.5],
+      backgroundColor: [
+        'rgba(235,10,30,0.85)',
+        'rgba(29,185,84,0.85)',
+        'rgba(26,111,204,0.85)',
+        'rgba(235,10,30,0.3)',
+        'rgba(29,185,84,0.3)',
+        'rgba(26,111,204,0.3)',
+      ],
+      borderColor: 'rgba(4,13,30,0.8)',
+      borderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { color: '#94a3c0', font: { family: FONT, size: 10 }, boxWidth: 10, padding: 10 }
+      },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: $${ctx.parsed}M/yr` } }
+    }
+  }
+});
+
+// Chart 3: Cumulative enrollment
+const cumToyota = [], cumByd = [], cumFord = [], cumTotal = [];
+let cumT = 0, cumB = 0, cumF = 0;
+for (let i = 0; i < 5; i++) {
+  cumT += TOYOTA_VOL * toyotaPhase[i];
+  cumB += (BYD_VOL_2024 + i * 0.3) * bydPhase[i];
+  cumF += (FORD_VOL + i * 0.05) * fordPhase[i];
+  cumToyota.push(+cumT.toFixed(2));
+  cumByd.push(+cumB.toFixed(2));
+  cumFord.push(+cumF.toFixed(2));
+  cumTotal.push(+(cumT + cumB + cumF).toFixed(2));
+}
+
+new Chart(document.getElementById('chartEnrollment'), {
+  type: 'line',
+  data: {
+    labels: years5,
+    datasets: [
+      {
+        label: 'Toyota cumulative fleet enrolled (M)',
+        data: cumToyota,
+        borderColor: 'rgba(235,10,30,0.9)',
+        backgroundColor: 'rgba(235,10,30,0.07)',
+        fill: true, tension: 0.4,
+        pointBackgroundColor: 'rgba(235,10,30,1)', pointRadius: 5,
+      },
+      {
+        label: 'BYD cumulative fleet enrolled (M)',
+        data: cumByd,
+        borderColor: 'rgba(29,185,84,0.9)',
+        backgroundColor: 'rgba(29,185,84,0.06)',
+        fill: true, tension: 0.4,
+        pointBackgroundColor: 'rgba(29,185,84,1)', pointRadius: 5,
+      },
+      {
+        label: 'Ford US cumulative fleet enrolled (M)',
+        data: cumFord,
+        borderColor: 'rgba(26,111,204,0.9)',
+        backgroundColor: 'rgba(26,111,204,0.06)',
+        fill: true, tension: 0.4,
+        pointBackgroundColor: 'rgba(26,111,204,1)', pointRadius: 5,
+      },
+      {
+        label: 'Combined total (M)',
+        data: cumTotal,
+        borderColor: 'rgba(245,158,11,0.9)',
+        backgroundColor: 'transparent',
+        borderDash: [6, 4], tension: 0.4,
+        pointBackgroundColor: 'rgba(245,158,11,1)', pointRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { labels: { color: '#94a3c0', font: { family: FONT, size: 11 }, boxWidth: 12 } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}M vehicles` } }
+    },
+    scales: {
+      x: { ticks: tickStyle, grid: { color: gridColor } },
+      y: { ticks: { ...tickStyle, callback: v => v + 'M' }, grid: { color: gridColor } }
+    }
+  }
+});
+
+// Chart 4: Stacked revenue with Ford
+const { tMint, bMint, fMint, api } = calcPhased();
+new Chart(document.getElementById('chartRevenue'), {
+  type: 'bar',
+  data: {
+    labels: years5,
+    datasets: [
+      {
+        label: 'Toyota Minting ($M)',
+        data: tMint,
+        backgroundColor: 'rgba(235,10,30,0.75)',
+        borderRadius: 4, stack: 'rev',
+      },
+      {
+        label: 'BYD Minting ($M)',
+        data: bMint,
+        backgroundColor: 'rgba(29,185,84,0.75)',
+        borderRadius: 4, stack: 'rev',
+      },
+      {
+        label: 'Ford US Minting ($M)',
+        data: fMint,
+        backgroundColor: 'rgba(26,111,204,0.8)',
+        borderRadius: 4, stack: 'rev',
+      },
+      {
+        label: 'API Verification — Growing Fleet ($M)',
+        data: api,
+        backgroundColor: 'rgba(109,53,232,0.6)',
+        borderRadius: 4, stack: 'rev',
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { labels: { color: '#94a3c0', font: { family: FONT, size: 11 }, boxWidth: 12 } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y}M` } }
+    },
+    scales: {
+      x: { ticks: tickStyle, grid: { color: gridColor }, stacked: true },
+      y: { ticks: { ...tickStyle, callback: v => '$' + v + 'M' }, grid: { color: gridColor }, stacked: true }
+    }
+  }
+});
+
+// Chart 5: BYD growth trajectory
+new Chart(document.getElementById('chartBydGrowth'), {
+  type: 'bar',
+  data: {
+    labels: histYears,
+    datasets: [{
+      label: 'BYD Annual Production (M units)',
+      data: bydHistory,
+      backgroundColor: bydHistory.map((_, i) =>
+        i === bydHistory.length - 1 ? 'rgba(29,185,84,0.85)' : 'rgba(29,185,84,0.4)'
+      ),
+      borderColor: 'rgba(29,185,84,0.9)',
+      borderWidth: 1.5, borderRadius: 5,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y}M vehicles` } }
+    },
+    scales: {
+      x: { ticks: tickStyle, grid: { color: gridColor } },
+      y: { ticks: { ...tickStyle, callback: v => v + 'M' }, grid: { color: gridColor } }
+    }
+  }
+});
+
+// Chart 6: Global share donut — updated with Ford US
+new Chart(document.getElementById('chartGlobal'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Toyota (13.1%)', 'BYD (5.4%)', 'Ford US (2.75%)', 'VW Group (11.5%)', 'Other Top 10 (22.25%)', 'Rest of World (45%)'],
+    datasets: [{
+      data: [10.5, 4.3, 2.2, 9.2, 17.8, 36],
+      backgroundColor: [
+        'rgba(235,10,30,0.85)',
+        'rgba(29,185,84,0.85)',
+        'rgba(26,111,204,0.85)',
+        'rgba(109,53,232,0.4)',
+        'rgba(90,106,138,0.25)',
+        'rgba(90,106,138,0.12)',
+      ],
+      borderColor: 'rgba(4,13,30,0.8)', borderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { color: '#94a3c0', font: { family: FONT, size: 10 }, boxWidth: 10, padding: 10 }
+      },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}` } }
+    }
+  }
+});
+
+// Chart 7: Ford US production history
+new Chart(document.getElementById('chartFordHistory'), {
+  type: 'bar',
+  data: {
+    labels: histYears,
+    datasets: [{
+      label: 'Ford US Wholesale Volume (M units)',
+      data: fordHistory,
+      backgroundColor: fordHistory.map((_, i) =>
+        i === fordHistory.length - 1 ? 'rgba(26,111,204,0.85)' : 'rgba(26,111,204,0.4)'
+      ),
+      borderColor: 'rgba(26,111,204,0.9)',
+      borderWidth: 1.5, borderRadius: 5,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y}M vehicles (US)` } }
+    },
+    scales: {
+      x: { ticks: tickStyle, grid: { color: gridColor } },
+      y: {
+        ticks: { ...tickStyle, callback: v => v + 'M' },
+        grid: { color: gridColor },
+        min: 0, max: 3,
+        suggestedMax: 3,
+      }
+    }
+  }
+});
+
+// Chart 8: Combined revenue vs global market %
+const GLOBAL_ANNUAL = 80; // M units/year
+const annualEnrolledPct = years5.map((_, i) => {
+  const t = TOYOTA_VOL * toyotaPhase[i];
+  const b = (BYD_VOL_2024 + i * 0.3) * bydPhase[i];
+  const f = (FORD_VOL + i * 0.05) * fordPhase[i];
+  return +((t + b + f) / GLOBAL_ANNUAL * 100).toFixed(2);
+});
+const annualTotalRevenue = years5.map((_, i) => {
+  return +(tMint[i] + bMint[i] + fMint[i] + api[i]).toFixed(1);
+});
+
+new Chart(document.getElementById('chartCombinedPct'), {
+  type: 'bar',
+  data: {
+    labels: years5,
+    datasets: [
+      {
+        type: 'bar',
+        label: 'Total Annual Revenue ($M)',
+        data: annualTotalRevenue,
+        backgroundColor: 'rgba(109,53,232,0.65)',
+        borderRadius: 5,
+        yAxisID: 'yRev',
+      },
+      {
+        type: 'line',
+        label: '% of Global New Vehicle Production Enrolled',
+        data: annualEnrolledPct,
+        borderColor: 'rgba(0,212,255,0.9)',
+        backgroundColor: 'rgba(0,212,255,0.08)',
+        fill: true, tension: 0.4,
+        pointBackgroundColor: 'rgba(0,212,255,1)', pointRadius: 5,
+        yAxisID: 'yPct',
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { labels: { color: '#94a3c0', font: { family: FONT, size: 11 }, boxWidth: 12 } },
+      tooltip: {
+        callbacks: {
+          label: ctx => ctx.dataset.yAxisID === 'yRev'
+            ? ` Revenue: $${ctx.parsed.y}M`
+            : ` Market coverage: ${ctx.parsed.y}% of global production`
+        }
+      }
+    },
+    scales: {
+      x: { ticks: tickStyle, grid: { color: gridColor } },
+      yRev: {
+        type: 'linear', position: 'left',
+        ticks: { ...tickStyle, callback: v => '$' + v + 'M' },
+        grid: { color: gridColor },
+        title: { display: true, text: 'Annual Revenue ($M)', color: '#5a6a8a', font: { family: FONT, size: 10 } }
+      },
+      yPct: {
+        type: 'linear', position: 'right',
+        ticks: { ...tickStyle, callback: v => v + '%' },
+        grid: { display: false },
+        title: { display: true, text: '% of Global Production', color: '#5a6a8a', font: { family: FONT, size: 10 } }
+      }
+    }
+  }
+});
+
+// ─── RAW NUMBERS TABLE ───
+const tableRows = [
+  {
+    name: 'Toyota (Global)',
+    color: 'var(--toyota-red)',
+    vol: '10.5M units',
+    pct: '13.1%',
+    mint: '$94.5M / yr',
+    api: '$26.3M / yr',
+    fiveyr: '~$580M',
+  },
+  {
+    name: 'BYD (Global)',
+    color: 'var(--byd-green)',
+    vol: '4.3M units',
+    pct: '5.4%',
+    mint: '$38.7M / yr',
+    api: '$10.8M / yr',
+    fiveyr: '~$240M',
+  },
+  {
+    name: 'Ford US',
+    color: 'var(--ford-blue-bright)',
+    vol: '2.2M units',
+    pct: '2.75%',
+    mint: '$19.8M / yr',
+    api: '$5.5M / yr',
+    fiveyr: '~$118M',
+  },
+];
+const tbody = document.getElementById('rawTableBody');
+tableRows.forEach((row, idx) => {
+  const bg = idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
+  tbody.innerHTML += `
+    <tr style="background:${bg};border-bottom:1px solid rgba(109,53,232,0.12);">
+      <td style="padding:0.75rem 1rem;font-family:var(--font-h);font-weight:700;color:${row.color}">${row.name}</td>
+      <td style="text-align:right;padding:0.75rem 1rem;font-family:var(--font-m);color:var(--text)">${row.vol}</td>
+      <td style="text-align:right;padding:0.75rem 1rem;font-family:var(--font-m);color:var(--text)">${row.pct}</td>
+      <td style="text-align:right;padding:0.75rem 1rem;font-family:var(--font-m);color:var(--text)">${row.mint}</td>
+      <td style="text-align:right;padding:0.75rem 1rem;font-family:var(--font-m);color:var(--text)">${row.api}</td>
+      <td style="text-align:right;padding:0.75rem 1rem;font-family:var(--font-m);color:var(--text)">${row.fiveyr}</td>
+    </tr>`;
+});
+
+// ─── INTERACTIVE SCENARIO (now includes Ford) ───
+function updateScenario() {
+  const tPct = parseInt(document.getElementById('toyotaSlider').value) / 100;
+  const bPct = parseInt(document.getElementById('bydSlider').value) / 100;
+  const fPct = parseInt(document.getElementById('fordSlider').value) / 100;
+
+  document.getElementById('toyotaVal').textContent = Math.round(tPct * 100) + '%';
+  document.getElementById('bydVal').textContent = Math.round(bPct * 100) + '%';
+  document.getElementById('fordVal').textContent = Math.round(fPct * 100) + '%';
+
+  const tVol = TOYOTA_VOL * tPct;
+  const bVol = BYD_VOL_2024 * bPct;
+  const fVol = FORD_VOL * fPct;
+  const totalMint = (tVol + bVol + fVol) * FEE;
+
+  let fiveYrTotal = 0;
+  let fleet = 0;
+  for (let i = 0; i < 5; i++) {
+    const tNew = TOYOTA_VOL * toyotaPhase[i] * tPct;
+    const bNew = (BYD_VOL_2024 + i * 0.3) * bydPhase[i] * bPct;
+    const fNew = (FORD_VOL + i * 0.05) * fordPhase[i] * fPct;
+    fleet += tNew + bNew + fNew;
+    fiveYrTotal += (tNew + bNew + fNew) * FEE;
+    fiveYrTotal += fleet * QUERIES_PER_VEH * QUERY_PRICE;
+  }
+
+  document.getElementById('out-t-vol').textContent = tVol.toFixed(1) + 'M';
+  document.getElementById('out-b-vol').textContent = bVol.toFixed(1) + 'M';
+  document.getElementById('out-f-vol').textContent = fVol.toFixed(1) + 'M';
+  document.getElementById('out-mint').textContent = '$' + totalMint.toFixed(0) + 'M';
+
+  const label = fiveYrTotal >= 1000
+    ? '$' + (fiveYrTotal / 1000).toFixed(2) + 'B'
+    : '$' + fiveYrTotal.toFixed(0) + 'M';
+  document.getElementById('out-5yr').textContent = label;
+}
+
+// Init
+updateScenario();
+</script>
+</body>
+</html>

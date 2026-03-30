@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.env
+
+# Built outputs — regenerate with scripts/build.sh
+dist/*.docx
+dist/*.xlsx
+
+# Internal development context — not for public repo
+CLAUDE.md
+
+# Editor
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*

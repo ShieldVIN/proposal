@@ -1,0 +1,3417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShieldVIN — Cryptographic Vehicle Identity on Midnight Network</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg-primary: #040d1e;
+  --bg-secondary: #080f20;
+  --bg-card: #0b1629;
+  --bg-card-hover: #0f1e38;
+  --purple-deep: #4a1fcc;
+  --purple-main: #6d35e8;
+  --purple-light: #9b70f0;
+  --purple-glow: rgba(109,53,232,0.2);
+  --cyan-main: #00d4ff;
+  --cyan-dim: #0096b4;
+  --cyan-glow: rgba(0,212,255,0.15);
+  --text-primary: #eef2ff;
+  --text-secondary: #94a3c0;
+  --text-muted: #5a6a8a;
+  --border-main: rgba(109,53,232,0.3);
+  --border-subtle: rgba(109,53,232,0.12);
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --gradient-purple: linear-gradient(135deg, #4a1fcc 0%, #6d35e8 50%, #9b70f0 100%);
+  --gradient-cyan: linear-gradient(135deg, #0096b4 0%, #00d4ff 100%);
+  --gradient-dark: linear-gradient(180deg, #080f20 0%, #040d1e 100%);
+  --font-heading: 'Exo 2', sans-serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; font-size: 16px; }
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.7;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── BACKGROUND ─── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(74,31,204,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 90%, rgba(0,212,255,0.05) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── NAVIGATION ─── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  background: rgba(4,13,30,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-main);
+  padding: 0 2rem;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-logo {
+  width: 36px;
+  height: 36px;
+}
+
+.nav-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+.nav-title span {
+  color: var(--cyan-main);
+}
+
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+  list-style: none;
+}
+
+.nav-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--cyan-main); }
+
+.nav-badge {
+  background: var(--purple-glow);
+  border: 1px solid var(--border-main);
+  color: var(--purple-light);
+  font-size: 0.72rem;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ─── LAYOUT ─── */
+.page-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+main { padding-top: 64px; }
+
+/* ─── HERO ─── */
+.hero {
+  min-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 5rem 0 3rem;
+  position: relative;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--cyan-glow);
+  border: 1px solid rgba(0,212,255,0.2);
+  border-radius: 100px;
+  padding: 6px 16px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--cyan-main);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+}
+
+.hero-eyebrow::before {
+  content: '';
+  width: 8px; height: 8px;
+  background: var(--cyan-main);
+  border-radius: 50%;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.hero h1 {
+  font-family: var(--font-heading);
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+  max-width: 820px;
+}
+
+.hero h1 .highlight {
+  background: var(--gradient-purple);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero h1 .highlight-cyan {
+  color: var(--cyan-main);
+  -webkit-text-fill-color: var(--cyan-main);
+}
+
+.hero-sub {
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  max-width: 640px;
+  margin-bottom: 2.5rem;
+  line-height: 1.7;
+}
+
+.hero-meta {
+  display: flex;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 3rem;
+}
+
+.hero-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hero-meta-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.hero-meta-value {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border-main);
+  border: 1px solid var(--border-main);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 2rem;
+}
+
+.stat-box {
+  background: var(--bg-card);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stat-num {
+  font-family: var(--font-heading);
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: var(--cyan-main);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* ─── SECTION STYLES ─── */
+section {
+  padding: 5rem 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.section-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--purple-light);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-label::before {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: var(--purple-light);
+}
+
+h2 {
+  font-family: var(--font-heading);
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+h3 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+
+h4 {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--purple-light);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+p {
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  font-size: 0.97rem;
+}
+
+.lead {
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  line-height: 1.8;
+  max-width: 760px;
+}
+
+/* ─── CARDS ─── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-main);
+  border-radius: 12px;
+  padding: 2rem;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(109,53,232,0.5);
+}
+
+.card-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--purple-glow);
+  border: 1px solid var(--border-main);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  font-size: 1.4rem;
+}
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+
+/* ─── HIGHLIGHT BOX ─── */
+.highlight-box {
+  background: var(--purple-glow);
+  border: 1px solid var(--border-main);
+  border-left: 3px solid var(--purple-main);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.highlight-box.cyan {
+  background: var(--cyan-glow);
+  border-color: rgba(0,212,255,0.3);
+  border-left-color: var(--cyan-main);
+}
+
+.highlight-box p { color: var(--text-primary); margin: 0; }
+
+/* ─── TAGS ─── */
+.tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.tag-purple { background: var(--purple-glow); border: 1px solid var(--border-main); color: var(--purple-light); }
+.tag-cyan { background: var(--cyan-glow); border: 1px solid rgba(0,212,255,0.2); color: var(--cyan-main); }
+.tag-success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); color: var(--success); }
+.tag-danger { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: var(--danger); }
+.tag-warning { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); color: var(--warning); }
+
+/* ─── DIVIDER ─── */
+.divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 2.5rem 0;
+}
+
+/* ─── FLOW DIAGRAM BASE ─── */
+.diagram-wrapper {
+  background: var(--bg-card);
+  border: 1px solid var(--border-main);
+  border-radius: 16px;
+  padding: 2rem;
+  overflow-x: auto;
+  margin: 2rem 0;
+}
+
+.diagram-title {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.diagram-title::before {
+  content: '';
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--purple-main);
+  border-radius: 3px;
+}
+
+/* ─── NODE STYLES ─── */
+.flow-node {
+  fill: #0f1e38;
+  stroke: rgba(109,53,232,0.5);
+  stroke-width: 1.5;
+}
+.flow-node-cyan {
+  fill: rgba(0,212,255,0.08);
+  stroke: rgba(0,212,255,0.4);
+  stroke-width: 1.5;
+}
+.flow-node-success {
+  fill: rgba(34,197,94,0.08);
+  stroke: rgba(34,197,94,0.4);
+  stroke-width: 1.5;
+}
+.flow-node-highlight {
+  fill: rgba(109,53,232,0.15);
+  stroke: rgba(109,53,232,0.7);
+  stroke-width: 2;
+}
+.flow-text {
+  font-family: 'IBM Plex Sans', sans-serif;
+  fill: #eef2ff;
+  font-size: 12px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+.flow-text-sm {
+  font-family: 'IBM Plex Sans', sans-serif;
+  fill: #94a3c0;
+  font-size: 10px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+.flow-label {
+  font-family: 'IBM Plex Sans', sans-serif;
+  fill: #94a3c0;
+  font-size: 9px;
+  text-anchor: middle;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.flow-arrow { stroke: rgba(109,53,232,0.6); stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+.flow-arrow-cyan { stroke: rgba(0,212,255,0.5); stroke-width: 1.5; fill: none; marker-end: url(#arrowhead-cyan); }
+
+/* ─── HARDWARE SAFE CARDS ─── */
+.safe-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-main);
+  border-radius: 16px;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.safe-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+
+.safe-card.node-1::before { background: var(--gradient-purple); }
+.safe-card.node-2::before { background: var(--gradient-cyan); }
+.safe-card.node-3::before { background: linear-gradient(90deg, #22c55e, #16a34a); }
+
+.safe-node-num {
+  font-family: var(--font-heading);
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  opacity: 0.15;
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+}
+
+.node-1 .safe-node-num { color: var(--purple-main); }
+.node-2 .safe-node-num { color: var(--cyan-main); }
+.node-3 .safe-node-num { color: var(--success); }
+
+.safe-specs {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.spec-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  font-size: 0.875rem;
+}
+
+.spec-key {
+  color: var(--text-muted);
+  min-width: 120px;
+  font-weight: 500;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 2px;
+}
+
+.spec-val {
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* ─── STAKEHOLDER SECTION ─── */
+.stakeholder-tab-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.stab {
+  padding: 8px 18px;
+  border-radius: 100px;
+  border: 1px solid var(--border-main);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stab.active, .stab:hover {
+  background: var(--purple-glow);
+  border-color: var(--purple-main);
+  color: var(--text-primary);
+}
+
+.stakeholder-panel { display: none; }
+.stakeholder-panel.active { display: block; }
+
+.permission-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin-top: 1rem;
+}
+
+.permission-matrix th {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-main);
+}
+
+.permission-matrix td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+
+.permission-matrix tr:last-child td { border-bottom: none; }
+
+.perm-yes { color: var(--success); font-weight: 600; }
+.perm-no { color: var(--text-muted); }
+.perm-partial { color: var(--warning); font-weight: 500; }
+
+/* ─── RISK TABLE ─── */
+.risk-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.risk-table th {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-main);
+}
+
+.risk-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  vertical-align: top;
+  line-height: 1.6;
+}
+
+.risk-table tr:last-child td { border-bottom: none; }
+
+.risk-high { color: var(--danger); font-weight: 600; }
+.risk-med { color: var(--warning); font-weight: 600; }
+.risk-low { color: var(--success); font-weight: 600; }
+
+/* ─── TIMELINE / PHASES ─── */
+.phase-list {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.phase-list::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border-main);
+}
+
+.phase-item {
+  position: relative;
+  margin-bottom: 2.5rem;
+}
+
+.phase-item::before {
+  content: '';
+  position: absolute;
+  left: -2rem;
+  top: 6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--purple-main);
+  background: var(--bg-primary);
+}
+
+.phase-item.active::before {
+  background: var(--purple-main);
+  box-shadow: 0 0 12px rgba(109,53,232,0.5);
+}
+
+.phase-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--purple-light);
+  margin-bottom: 0.5rem;
+}
+
+.phase-title {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+/* ─── NAME SUGGESTION ─── */
+.name-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: border-color 0.2s;
+}
+
+.name-card:hover { border-color: var(--border-main); }
+
+.name-word {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.name-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ─── FRAMEWORK STANDARD ─── */
+.standard-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.standard-code {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--cyan-main);
+  background: var(--cyan-glow);
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-right: 10px;
+}
+
+/* ─── FOOTER ─── */
+footer {
+  border-top: 1px solid var(--border-main);
+  padding: 3rem 0;
+  margin-top: 4rem;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 3rem;
+}
+
+.footer-brand {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.footer-tagline {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.footer-col-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.footer-links { list-style: none; }
+.footer-links li { margin-bottom: 0.6rem; }
+.footer-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.2s;
+}
+.footer-links a:hover { color: var(--cyan-main); }
+
+.footer-bottom {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ─── CHART CONTAINER ─── */
+.chart-wrap {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.chart-title {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 1.25rem;
+}
+
+/* ─── TOC ─── */
+.toc {
+  background: var(--bg-card);
+  border: 1px solid var(--border-main);
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 3rem 0;
+}
+
+.toc-title {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+
+.toc-list {
+  list-style: none;
+  columns: 2;
+  column-gap: 2rem;
+}
+
+.toc-list li {
+  margin-bottom: 0.6rem;
+  break-inside: avoid;
+}
+
+.toc-list a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.2s;
+}
+
+.toc-list a:hover { color: var(--cyan-main); }
+
+.toc-num {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  min-width: 24px;
+}
+
+/* ─── PRINT ─── */
+@media print {
+  /* Reset backgrounds and colours to print-safe values */
+  *, *::before, *::after {
+    background: white !important;
+    color: #111 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    font-size: 10pt;
+    line-height: 1.5;
+    background: white !important;
+  }
+
+  /* Hide interactive / screen-only elements */
+  nav,
+  .nav-links,
+  .nav-badge,
+  .toc,
+  .hero-stats,
+  .chart-wrap,
+  canvas,
+  .print-hide { display: none !important; }
+
+  /* Show print-only elements */
+  .print-only { display: block !important; }
+  table.print-only { display: table !important; }
+
+  main { padding-top: 0 !important; }
+
+  /* Hero: strip the gradient, keep it compact */
+  .hero {
+    padding: 1.5rem 0 1rem !important;
+    border-bottom: 2pt solid #040d1e !important;
+    page-break-after: always;
+  }
+  .hero h1 {
+    font-size: 22pt !important;
+    color: #040d1e !important;
+    margin-bottom: 0.4rem !important;
+  }
+  .hero-eyebrow {
+    font-size: 9pt !important;
+    color: #444 !important;
+    letter-spacing: 0.08em;
+  }
+  .hero-sub {
+    font-size: 11pt !important;
+    color: #222 !important;
+    max-width: 100% !important;
+  }
+  .hero-meta {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 1rem !important;
+    margin-top: 1rem !important;
+    border-top: 1pt solid #ccc !important;
+    padding-top: 0.75rem !important;
+  }
+  .hero-meta-label { font-size: 8pt !important; color: #666 !important; }
+  .hero-meta-value { font-size: 9pt !important; color: #111 !important; font-weight: 600 !important; }
+
+  /* Sections */
+  section {
+    page-break-before: auto;
+    page-break-inside: avoid;
+    padding: 1.25rem 0 !important;
+    border-top: 1pt solid #ddd !important;
+  }
+
+  /* Section label (e.g. "01 — The Problem") */
+  .section-label {
+    font-size: 8pt !important;
+    color: #6d35e8 !important;
+    letter-spacing: 0.12em !important;
+    font-weight: 700 !important;
+    margin-bottom: 0.4rem !important;
+  }
+
+  h2 { font-size: 16pt !important; color: #040d1e !important; margin-bottom: 0.5rem !important; }
+  h3 { font-size: 12pt !important; color: #040d1e !important; margin-bottom: 0.4rem !important; }
+  h4 { font-size: 10pt !important; color: #040d1e !important; margin-bottom: 0.25rem !important; }
+
+  p, li { font-size: 10pt !important; color: #222 !important; }
+  .lead { font-size: 11pt !important; color: #222 !important; }
+
+  /* Cards: light border, no background glow */
+  .card {
+    border: 1pt solid #bbb !important;
+    border-radius: 4pt !important;
+    padding: 0.75rem !important;
+    page-break-inside: avoid;
+    margin-bottom: 0.5rem !important;
+  }
+  .card-icon { display: none !important; }
+
+  /* Grids collapse to single column */
+  .grid-2, .grid-3, .grid-4 {
+    display: block !important;
+  }
+  .grid-2 > *, .grid-3 > *, .grid-4 > * {
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Spec rows */
+  .spec-key {
+    font-weight: 700 !important;
+    color: #111 !important;
+    min-width: 140pt !important;
+  }
+  .spec-val { color: #333 !important; }
+
+  /* Tags */
+  .tag {
+    border: 1pt solid #999 !important;
+    color: #333 !important;
+    font-size: 8pt !important;
+    padding: 1pt 5pt !important;
+  }
+  .tag-purple, .tag-cyan, .tag-success, .tag-danger, .tag-warning {
+    color: #333 !important;
+  }
+
+  /* Phase list */
+  .phase-item {
+    border-left: 3pt solid #6d35e8 !important;
+    padding-left: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+    page-break-inside: avoid;
+  }
+  .phase-tag {
+    font-size: 8pt !important;
+    font-weight: 700 !important;
+    color: #6d35e8 !important;
+    letter-spacing: 0.06em;
+  }
+  .phase-title { font-size: 11pt !important; font-weight: 700 !important; color: #111 !important; }
+
+  /* Standard items */
+  .standard-item {
+    border-left: 2pt solid #ccc !important;
+    padding-left: 0.5rem !important;
+    margin-bottom: 0.4rem !important;
+  }
+  .standard-code {
+    font-weight: 700 !important;
+    color: #6d35e8 !important;
+    margin-right: 0.5rem !important;
+  }
+
+  /* Flow diagrams (SVG) — keep, they're vector */
+  .flow-diagram svg { max-width: 100% !important; }
+  .flow-diagram { page-break-inside: avoid; }
+
+  /* Dividers */
+  .divider { border-top: 1pt solid #ddd !important; margin: 0.75rem 0 !important; }
+
+  /* Footer */
+  footer { border-top: 1pt solid #ccc !important; padding-top: 0.75rem !important; font-size: 8pt !important; }
+  .footer-brand { font-size: 11pt !important; font-weight: 700 !important; color: #040d1e !important; }
+  .footer-tagline { color: #555 !important; }
+  .footer-grid { display: block !important; }
+
+  /* Stakeholder tab panels — show all panels in print, hide tab buttons */
+  .stakeholder-tab-bar { display: none !important; }
+  .stakeholder-panel { display: block !important; }
+  .stakeholder-panel + .stakeholder-panel { border-top: 1pt solid #ddd !important; padding-top: 0.75rem !important; margin-top: 0.5rem !important; }
+
+  /* Risk table */
+  table { border-collapse: collapse !important; width: 100% !important; font-size: 9pt !important; }
+  th { background: #040d1e !important; color: white !important; padding: 4pt 6pt !important; font-size: 9pt !important; }
+  td { border: 0.5pt solid #ccc !important; padding: 3pt 6pt !important; }
+
+  /* Page breaks */
+  .page-break-before { page-break-before: always !important; }
+
+  /* Links: remove colour, show URL for key external links */
+  a { color: #111 !important; text-decoration: none !important; }
+
+  /* Competitor analysis section cards */
+  #alternatives .card[style*="border-left"] {
+    border-left: 3pt solid #999 !important;
+    margin-bottom: 0.5rem !important;
+  }
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { grid-template-columns: 1fr 1fr; }
+  .toc-list { columns: 1; }
+  .nav-links { display: none; }
+  .footer-grid { grid-template-columns: 1fr; }
+
+  /* Stakeholder tabs — wrap and shrink on mobile */
+  .stakeholder-tab-bar { gap: 0.35rem; }
+  .stab { font-size: 0.78rem; padding: 6px 12px; }
+
+  /* Tables — horizontal scroll on mobile to prevent overflow */
+  .permission-matrix, .risk-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+  .permission-matrix td, .permission-matrix th,
+  .risk-table td, .risk-table th {
+    padding: 10px 12px;
+    font-size: 0.78rem;
+    white-space: normal;
+    min-width: 80px;
+  }
+  .risk-table td:first-child,
+  .permission-matrix td:first-child { min-width: 140px; }
+
+  /* Safe spec rows — stack on mobile */
+  .spec-row { flex-direction: column; gap: 0.25rem; }
+  .spec-key { min-width: unset; font-size: 0.75rem; }
+
+  /* Phase list — tighten padding */
+  .phase-list { padding-left: 1.25rem; }
+
+  /* Highlight boxes — smaller padding */
+  .highlight-box { padding: 1.25rem; }
+
+  /* Chart wrap — ensure canvas scrolls */
+  .chart-wrap { overflow-x: auto; }
+  .chart-wrap canvas { min-width: 300px; }
+}
+
+@media (max-width: 480px) {
+  body { padding: 1rem 1rem 3rem; }
+  h1 { font-size: 1.6rem; }
+  .hero-stats { grid-template-columns: 1fr; }
+  .stat-num { font-size: 2.2rem; }
+  .stab { font-size: 0.72rem; padding: 5px 10px; }
+  .toc-list li { font-size: 0.875rem; }
+  section { padding: 2rem 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ─── NAVIGATION ─── -->
+<nav>
+  <div class="nav-brand">
+    <svg class="nav-logo" viewBox="0 0 36 36" fill="none">
+      <circle cx="18" cy="18" r="17" stroke="rgba(109,53,232,0.4)" stroke-width="1"/>
+      <path d="M18 6 C10 6 6 12 6 18 C6 24 10 30 18 30" stroke="#6d35e8" stroke-width="2" stroke-linecap="round"/>
+      <path d="M18 9 C12 9 9 13.5 9 18" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+      <circle cx="18" cy="18" r="3" fill="#6d35e8"/>
+      <circle cx="18" cy="18" r="1.5" fill="#00d4ff"/>
+    </svg>
+    <div>
+      <div class="nav-title">ShieldVIN <span>× Midnight Network</span></div>
+    </div>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#solution">Solution</a></li>
+    <li><a href="#hardware">Hardware</a></li>
+    <li><a href="#stakeholders">Stakeholders</a></li>
+    <li><a href="#framework">Framework</a></li>
+    <li><a href="#alternatives">Why Midnight</a></li>
+    <li><a href="#business">Business</a></li>
+    <li><a href="#risks">Risks</a></li>
+    <li><a href="shieldvin-summary.html" style="color:var(--cyan-main)">Summary ↗</a></li>
+    <li><a href="shieldvin-demo.html" style="color:var(--purple-light)">Demo ↗</a></li>
+  </ul>
+  <span class="nav-badge">Whitepaper v1.0 — 2026</span>
+</nav>
+
+<main>
+<div class="page-wrapper">
+
+<!-- ─── HERO ─── -->
+<section class="hero" id="top">
+  <div class="hero-eyebrow">Concept Proposal for Midnight Network</div>
+
+  <h1>
+    Making Vehicle Identity<br>
+    <span class="highlight">Cryptographically Impossible</span><br>
+    to Steal or Clone
+  </h1>
+
+  <p class="hero-sub">
+    A proposal for integrating Midnight Network's zero-knowledge proof technology with automotive manufacturing — creating a three-layer hardware identity system that makes VIN cloning and chassis number fraud permanently impossible on new vehicles.
+  </p>
+
+  <div class="hero-meta">
+    <div class="hero-meta-item">
+      <span class="hero-meta-label">Document Type</span>
+      <span class="hero-meta-value">Business Plan &amp; Concept Whitepaper</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="hero-meta-label">Version</span>
+      <span class="hero-meta-value">1.0 — March 2026</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="hero-meta-label">Technology</span>
+      <span class="hero-meta-value">Midnight Network (ZK Proofs + Cardano)</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="hero-meta-label">Status</span>
+      <span class="hero-meta-value">Open Proposal</span>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat-box">
+      <div class="stat-num">$7.4B</div>
+      <div class="stat-label">Annual vehicle theft losses in the US alone</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">1M+</div>
+      <div class="stat-label">Vehicles reported stolen in the US per year</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">3</div>
+      <div class="stat-label">Secure hardware nodes required to verify each vehicle</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num">0</div>
+      <div class="stat-label">Ways to clone an identity when all three nodes must sign</div>
+    </div>
+  </div>
+
+  <div style="margin-top:1.5rem;display:flex;gap:0.75rem;flex-wrap:wrap;" class="print-hide">
+    <button onclick="window.print()" style="padding:10px 22px;background:var(--gradient-purple);border:none;border-radius:8px;color:white;font-family:var(--font-body);font-size:0.875rem;font-weight:600;cursor:pointer;letter-spacing:0.02em;">Save as PDF</button>
+    <a href="#proposal" style="padding:10px 22px;border:1px solid var(--border-main);border-radius:8px;color:var(--text-secondary);font-family:var(--font-body);font-size:0.875rem;font-weight:500;text-decoration:none;">Skip to Proposal →</a>
+    <a href="shieldvin-summary.html" style="padding:10px 22px;border:1px solid rgba(0,212,255,0.4);border-radius:8px;color:var(--cyan-main);font-family:var(--font-body);font-size:0.875rem;font-weight:500;text-decoration:none;">One-Page Summary ↗</a>
+    <a href="shieldvin-demo.html" style="padding:10px 22px;border:1px solid rgba(109,53,232,0.4);border-radius:8px;color:var(--purple-light);font-family:var(--font-body);font-size:0.875rem;font-weight:500;text-decoration:none;">Interactive Demo ↗</a>
+  </div>
+</section>
+
+<!-- ─── TABLE OF CONTENTS ─── -->
+<div class="toc">
+  <div class="toc-title">Table of Contents</div>
+  <ul class="toc-list">
+    <li><a href="#problem"><span class="toc-num">01</span> The Problem</a></li>
+    <li><a href="#solution"><span class="toc-num">02</span> The Solution</a></li>
+    <li><a href="#how-it-works"><span class="toc-num">03</span> How It Works</a></li>
+    <li><a href="#hardware"><span class="toc-num">04</span> The Three Hardware Safes</a></li>
+    <li><a href="#stakeholders"><span class="toc-num">05</span> Stakeholder Systems</a></li>
+    <li><a href="#framework"><span class="toc-num">06</span> Industry Framework</a></li>
+    <li><a href="#industries"><span class="toc-num">07</span> Industries Affected</a></li>
+    <li><a href="#alternatives"><span class="toc-num">08</span> Why Midnight Network</a></li>
+    <li><a href="#business"><span class="toc-num">09</span> Business Model</a></li>
+    <li><a href="#roadmap"><span class="toc-num">10</span> Rollout Roadmap</a></li>
+    <li><a href="#risks"><span class="toc-num">11</span> Risk Analysis</a></li>
+    <li><a href="#financial"><span class="toc-num">12</span> Financial Overview</a></li>
+    <li><a href="#team"><span class="toc-num">13</span> Team &amp; Advisory</a></li>
+    <li><a href="#proposal"><span class="toc-num">14</span> Proposal to Midnight</a></li>
+    <li><a href="#glossary"><span class="toc-num">15</span> Glossary</a></li>
+  </ul>
+</div>
+
+<!-- COMPANION DOCUMENTS -->
+<div class="print-hide" style="display:flex;gap:16px;flex-wrap:wrap;margin:1.5rem 0 2rem;padding:20px 24px;background:var(--bg-card);border:1px solid var(--border-main);border-radius:12px;align-items:center;">
+  <div style="flex:1;min-width:200px;">
+    <div style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Companion Documents</div>
+    <div style="font-family:var(--font-heading);font-weight:700;font-size:0.95rem;color:var(--text-primary);">Shorter formats for different audiences</div>
+  </div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <a href="shieldvin-summary.html" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:1.5px solid rgba(0,212,255,0.35);border-radius:8px;color:var(--cyan-main);font-family:var(--font-body);font-size:0.85rem;font-weight:600;text-decoration:none;background:rgba(0,212,255,0.05);">
+      📄 One-Page Summary
+    </a>
+    <a href="shieldvin-demo.html" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:1.5px solid rgba(109,53,232,0.45);border-radius:8px;color:var(--purple-light);font-family:var(--font-body);font-size:0.85rem;font-weight:600;text-decoration:none;background:rgba(109,53,232,0.06);">
+      ▶ Interactive Demo
+    </a>
+  </div>
+</div>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<!-- 01 — THE PROBLEM -->
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="problem">
+  <div class="section-label">01 — The Problem</div>
+  <h2>Vehicle Identity Fraud Is a Growing Crisis</h2>
+  <p class="lead">Every year, billions of dollars are lost to vehicle theft, and a significant portion of that comes not from the theft itself but from what happens after — the criminal reuse and resale of stolen vehicles using fraudulent identities.</p>
+
+  <div class="divider"></div>
+
+  <h3>What Is VIN Cloning?</h3>
+  <p>Every vehicle on the road carries a Vehicle Identification Number — a 17-character code that acts as its permanent identity. It links to registration records, insurance policies, service history, and ownership titles. VIN cloning is the criminal practice of copying this number from a legitimate, legally owned vehicle and applying it to a stolen one.</p>
+  <p>The result is that a stolen car gets a false identity that can pass basic checks at title offices, used car dealerships, and online marketplaces. The stolen vehicle can then be sold, registered, and insured as if nothing happened.</p>
+
+  <div class="highlight-box">
+    <p>The core vulnerability in the current system is that a VIN is just a number stamped on a metal plate. It carries no cryptographic proof that it belongs to the physical vehicle it is attached to. Anyone with the right tools can stamp any number onto any plate.</p>
+  </div>
+
+  <div class="grid-2" style="margin-top:2rem;">
+    <div class="card">
+      <div class="card-icon">🔧</div>
+      <h3>How Criminals Do It</h3>
+      <p>A thief steals a vehicle, then locates a similar make and model that has been written off as salvage or scrap. They purchase the salvage vehicle cheaply, strip its VIN plate, and apply it to the stolen car. With the VIN in place, they produce forged ownership documents and register the stolen car under the scrapped vehicle's identity in a different state or jurisdiction.</p>
+      <p>At this point the vehicle has a technically valid VIN, a believable paper trail, and can be sold to an unsuspecting buyer or shipped overseas.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">💸</div>
+      <h3>The Damage It Causes</h3>
+      <p>When authorities discover a cloned vehicle, it is seized on the spot. The buyer loses every dollar they paid, may still owe a car loan on a vehicle they no longer have, and can face accusations of handling stolen goods.</p>
+      <p>Insurance companies pay out fraudulent claims. Manufacturers see their vehicle data compromised. Law enforcement spends enormous resources tracking stolen vehicles through a system that was never designed to catch sophisticated fraud. And the legitimate owner of the donor VIN sometimes faces false traffic violations, criminal queries, and registration problems.</p>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:1.5rem;">
+    <div class="card">
+      <div class="card-icon">⚠️</div>
+      <h3>Weaknesses in the Current System</h3>
+      <p>Existing databases like NMVTIS (US) or HPI (UK) are reactive — they rely on timely reporting and cross-state data sharing, which is often inconsistent. Metal VIN plates can be replicated with embossing presses available to anyone willing to search online. 3D printing now makes factory-accurate plate reproduction faster than ever.</p>
+      <p>Digital odometer fraud, chassis number alteration, and cross-border title washing (moving a vehicle through multiple jurisdictions to clean its history) all exploit the same fundamental weakness: there is no cryptographic link between the physical vehicle and its recorded identity.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🌍</div>
+      <h3>The Scale of the Problem</h3>
+      <p>In the United States alone, the FBI estimates vehicle theft losses exceed $7.4 billion annually. In South Africa, the figure runs into tens of billions of rand per year. Across Europe, approximately 580,000 vehicles are stolen annually. In many markets, stolen vehicle rings operate across borders with sophisticated networks for re-plating and re-registering cars.</p>
+      <p>Insurance companies price this risk into premiums for all drivers — meaning even honest car owners pay more because of a fraud problem that technology has not yet properly addressed.</p>
+    </div>
+  </div>
+
+  <div class="chart-wrap" style="margin-top:2rem;">
+    <div class="chart-title">Annual Vehicle Theft Losses by Region (USD Billions, Estimated)</div>
+    <canvas id="chartTheft" height="260"></canvas>
+    <table class="print-only" style="display:none;margin-top:0.5rem;width:100%;border-collapse:collapse;font-size:9pt;">
+      <thead><tr><th style="text-align:left;padding:4px 8px;background:#040d1e;color:white;">Region</th><th style="padding:4px 8px;background:#040d1e;color:white;">Est. Annual Losses (USD B)</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;">North America</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$7.4B</td></tr>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;">Europe</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$4.1B</td></tr>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;">Asia-Pacific</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$5.8B</td></tr>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;">Latin America</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$2.6B</td></tr>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;">Middle East &amp; Africa</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$1.9B</td></tr>
+        <tr style="font-weight:bold;"><td style="padding:3px 8px;border:1px solid #ccc;">Global Total</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">~$21.8B</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────────────── -->
+<!-- 02 — THE SOLUTION -->
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="solution">
+  <div class="section-label">02 — The Solution</div>
+  <h2>Cryptographic Vehicle Identity — Built on Midnight Network</h2>
+  <p class="lead">The solution is to replace the VIN plate as the sole source of truth with a cryptographic identity that lives across three separate hardware nodes inside the vehicle itself, anchored permanently to the Midnight Network blockchain.</p>
+
+  <div class="divider"></div>
+
+  <div class="grid-2" style="margin-bottom:2rem;">
+    <div>
+      <h3>Why Midnight Network?</h3>
+      <p>Most blockchain solutions for vehicle identity would put all the data on a public ledger — which creates a different kind of problem. You do not want a vehicle's full ownership history, location data, or service records freely visible to anyone who looks up a number.</p>
+      <p>Midnight Network's core innovation is <strong style="color:var(--text-primary)">selective disclosure</strong> powered by zero-knowledge proofs. This means a system can prove something is true — "this VIN is authentic," "this vehicle is not stolen," "this owner has valid title" — without revealing the underlying private data.</p>
+      <p>A police officer gets a yes/no answer on whether a vehicle is stolen. An insurance company gets confirmation of ownership history. A potential buyer gets proof the vehicle has a clean identity. Each party gets exactly what they need and nothing more.</p>
+    </div>
+    <div>
+      <h3>The Core Concept</h3>
+      <p>At the point of manufacture, every new vehicle would have three separate <strong style="color:var(--text-primary)">Secure Element chips</strong> embedded in different physical locations throughout the vehicle. Each chip independently generates and holds its own cryptographic keypair — the private key is created inside the chip and never leaves it.</p>
+      <p>A vehicle identity record — a <strong style="color:var(--text-primary)">Vehicle Identity Token</strong> — is created on the Midnight Network at the moment of manufacture. This token links the vehicle's VIN, chassis number, engine serial, and build data to the combined signature of all three hardware nodes.</p>
+      <p>To verify a vehicle, all three nodes must cooperate to produce a zero-knowledge proof. If any node is missing, swapped, or tampered with, the proof fails. There is no plate to swap, no sticker to peel off, and no database entry to falsify. The vehicle either proves its own identity or it does not.</p>
+    </div>
+  </div>
+
+  <div class="highlight-box cyan">
+    <p>A thief would need to simultaneously replace the engine control unit, cut and swap the structural chassis module, and replace the telematics system — all without triggering a network alert — and still could not reproduce the original cryptographic keys. Each chip generates its own keypair in hardware isolation at manufacture. The private keys never leave the chips and cannot be read out even by the manufacturer. Without the original chips, the proof cannot be generated.</p>
+  </div>
+
+  <div class="grid-3" style="margin-top:2rem;">
+    <div class="card">
+      <h4>Zero-Knowledge Proofs</h4>
+      <p>Prove a claim is true without revealing the data behind it. "This car is not stolen" can be verified without exposing the owner's name or address.</p>
+    </div>
+    <div class="card">
+      <h4>Three-Node Multi-Signature</h4>
+      <p>All three hardware nodes must cooperate to sign any verification request. Remove one node and the entire system fails — by design.</p>
+    </div>
+    <div class="card">
+      <h4>Immutable Ledger</h4>
+      <p>Once minted on Midnight Network, the Vehicle Identity Token cannot be altered. Every ownership transfer, service event, and insurance claim is recorded permanently.</p>
+    </div>
+    <div class="card">
+      <h4>Selective Disclosure</h4>
+      <p>Different stakeholders see different information based on their role. Police get status only. Buyers get ownership history. Manufacturers retain full build data.</p>
+    </div>
+    <div class="card">
+      <h4>Privacy Compliant</h4>
+      <p>Owner personal data never touches the blockchain. Only proofs and hashes are stored on-chain, keeping the system compliant with GDPR and similar regulations worldwide.</p>
+    </div>
+    <div class="card">
+      <h4>New Vehicles Only</h4>
+      <p>This system is designed exclusively for new vehicles at the point of manufacture. The SE chips must be embedded during production — there is no older-vehicle programme, keeping the hardware standard clean and unambiguous.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────────────── -->
+<!-- 03 — HOW IT WORKS -->
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="how-it-works">
+  <div class="section-label">03 — How It Works</div>
+  <h2>System Architecture &amp; Flow</h2>
+  <p class="lead">The system operates across four distinct stages: manufacturing, minting, lifecycle tracking, and verification. Each stage has defined actors, data flows, and cryptographic events.</p>
+
+  <!-- FLOW DIAGRAM 1: MANUFACTURING -->
+  <div class="diagram-wrapper">
+    <div class="diagram-title">Flow 1 — Manufacturing &amp; Registration</div>
+    <svg viewBox="0 0 1000 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:720px;">
+      <defs>
+        <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="rgba(109,53,232,0.7)"/>
+        </marker>
+        <marker id="arrowhead-cyan" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="rgba(0,212,255,0.6)"/>
+        </marker>
+      </defs>
+
+      <!-- Box 1: Factory Assembly -->
+      <rect x="10" y="100" width="130" height="60" rx="8" class="flow-node-highlight"/>
+      <text x="75" y="124" class="flow-text" font-weight="600">Vehicle</text>
+      <text x="75" y="140" class="flow-text" font-weight="600">Assembled</text>
+      <text x="75" y="158" class="flow-text-sm">Factory floor</text>
+
+      <!-- Arrow 1→2 -->
+      <line x1="142" y1="130" x2="174" y2="130" class="flow-arrow"/>
+
+      <!-- Box 2: 3 Chips Installed -->
+      <rect x="176" y="90" width="140" height="80" rx="8" class="flow-node"/>
+      <text x="246" y="112" class="flow-text" font-weight="600">3 Secure Elements</text>
+      <text x="246" y="128" class="flow-text" font-weight="600">Installed</text>
+      <text x="246" y="148" class="flow-text-sm">ECU · Chassis · Telematics</text>
+      <text x="246" y="162" class="flow-text-sm">Each holds key shard K1/K2/K3</text>
+
+      <!-- Arrow 2→3 -->
+      <line x1="318" y1="130" x2="350" y2="130" class="flow-arrow"/>
+
+      <!-- Box 3: Key Ceremony -->
+      <rect x="352" y="90" width="140" height="80" rx="8" class="flow-node"/>
+      <text x="422" y="112" class="flow-text" font-weight="600">Key Generation</text>
+      <text x="422" y="128" class="flow-text" font-weight="600">Ceremony</text>
+      <text x="422" y="148" class="flow-text-sm">3 chips generate independent keys</text>
+      <text x="422" y="162" class="flow-text-sm">Private keys never leave chips</text>
+
+      <!-- Arrow 3→4 -->
+      <line x1="494" y1="130" x2="526" y2="130" class="flow-arrow"/>
+
+      <!-- Box 4: Token Mint -->
+      <rect x="528" y="90" width="140" height="80" rx="8" class="flow-node-cyan"/>
+      <text x="598" y="112" class="flow-text" font-weight="600">Vehicle Identity</text>
+      <text x="598" y="128" class="flow-text" font-weight="600">Token Minted</text>
+      <text x="598" y="148" class="flow-text-sm">On Midnight Network</text>
+      <text x="598" y="162" class="flow-text-sm">VIN + Chassis + Build data</text>
+
+      <!-- Arrow 4→5 -->
+      <line x1="670" y1="130" x2="702" y2="130" class="flow-arrow-cyan"/>
+
+      <!-- Box 5: Vehicle Ready -->
+      <rect x="704" y="90" width="140" height="80" rx="8" class="flow-node-success"/>
+      <text x="774" y="112" class="flow-text" font-weight="600">Vehicle Shipped</text>
+      <text x="774" y="128" class="flow-text" font-weight="600">&amp; Registered</text>
+      <text x="774" y="148" class="flow-text-sm">Physical VIN plate still</text>
+      <text x="774" y="162" class="flow-text-sm">affixed (now secondary)</text>
+
+      <!-- Step labels below -->
+      <text x="75" y="180" class="flow-label">STEP 1</text>
+      <text x="246" y="180" class="flow-label">STEP 2</text>
+      <text x="422" y="180" class="flow-label">STEP 3</text>
+      <text x="598" y="180" class="flow-label">STEP 4</text>
+      <text x="774" y="180" class="flow-label">STEP 5</text>
+
+      <!-- Midnight label -->
+      <rect x="528" y="200" width="320" height="30" rx="6" fill="rgba(0,212,255,0.05)" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+      <text x="688" y="219" class="flow-text-sm" fill="rgba(0,212,255,0.8)">Midnight Network — Token is now the authoritative identity record</text>
+
+      <!-- ── Step number badges (overlay top of each box) ── -->
+      <circle cx="75" cy="83" r="13" fill="rgba(109,53,232,0.95)" stroke="rgba(109,53,232,0.3)" stroke-width="1"/>
+      <text x="75" y="83" class="flow-text" font-weight="700" font-size="11">1</text>
+
+      <circle cx="246" cy="73" r="13" fill="#0f1e38" stroke="rgba(109,53,232,0.65)" stroke-width="1.5"/>
+      <text x="246" y="73" class="flow-text" font-weight="700" font-size="11" fill="#9b70f0">2</text>
+
+      <circle cx="422" cy="73" r="13" fill="#0f1e38" stroke="rgba(109,53,232,0.65)" stroke-width="1.5"/>
+      <text x="422" y="73" class="flow-text" font-weight="700" font-size="11" fill="#9b70f0">3</text>
+
+      <circle cx="598" cy="73" r="13" fill="rgba(0,212,255,0.15)" stroke="rgba(0,212,255,0.8)" stroke-width="2"/>
+      <text x="598" y="73" class="flow-text" font-weight="700" font-size="11" fill="#00d4ff">4</text>
+
+      <circle cx="774" cy="73" r="13" fill="rgba(34,197,94,0.15)" stroke="rgba(34,197,94,0.65)" stroke-width="1.5"/>
+      <text x="774" y="73" class="flow-text" font-weight="700" font-size="11" fill="#22c55e">5</text>
+
+      <!-- ── BLOCKCHAIN label above step 4 ── -->
+      <rect x="522" y="42" width="152" height="22" rx="4" fill="rgba(0,212,255,0.06)" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+      <text x="598" y="53" class="flow-text-sm" fill="rgba(0,212,255,0.65)" font-size="9">ON-CHAIN · IMMUTABLE · ZK PROTECTED</text>
+    </svg>
+  </div>
+
+  <!-- FLOW DIAGRAM 2: VERIFICATION -->
+  <div class="diagram-wrapper">
+    <div class="diagram-title">Flow 2 — Real-Time Verification at a Checkpoint</div>
+    <svg viewBox="0 0 1000 340" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:720px;">
+      <defs>
+        <marker id="arrowhead2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="rgba(109,53,232,0.7)"/>
+        </marker>
+        <marker id="arrowhead2c" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="rgba(0,212,255,0.6)"/>
+        </marker>
+        <marker id="arrowhead2g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="rgba(34,197,94,0.7)"/>
+        </marker>
+      </defs>
+
+      <!-- Authority -->
+      <rect x="10" y="130" width="120" height="60" rx="8" fill="rgba(245,158,11,0.1)" stroke="rgba(245,158,11,0.4)" stroke-width="1.5"/>
+      <text x="70" y="154" class="flow-text" font-weight="600">Authority</text>
+      <text x="70" y="170" class="flow-text-sm">(Police / Dealer / etc.)</text>
+      <text x="70" y="204" class="flow-label">INITIATOR</text>
+
+      <!-- Arrow 1 -->
+      <line x1="132" y1="160" x2="168" y2="160" stroke="rgba(245,158,11,0.5)" stroke-width="1.5" marker-end="url(#arrowhead2)"/>
+      <text x="150" y="150" class="flow-text-sm">Query</text>
+
+      <!-- Vehicle ZK Node -->
+      <rect x="170" y="100" width="150" height="120" rx="8" class="flow-node"/>
+      <text x="245" y="130" class="flow-text" font-weight="700">Vehicle</text>
+      <text x="245" y="148" class="flow-text">Generates ZK Proof</text>
+      <!-- Three chips inside -->
+      <rect x="185" y="158" width="40" height="20" rx="4" fill="rgba(109,53,232,0.2)" stroke="rgba(109,53,232,0.4)" stroke-width="1"/>
+      <text x="205" y="172" class="flow-text-sm">EN-1</text>
+      <rect x="230" y="158" width="40" height="20" rx="4" fill="rgba(0,212,255,0.15)" stroke="rgba(0,212,255,0.35)" stroke-width="1"/>
+      <text x="250" y="172" class="flow-text-sm">CN-2</text>
+      <rect x="275" y="158" width="40" height="20" rx="4" fill="rgba(34,197,94,0.12)" stroke="rgba(34,197,94,0.35)" stroke-width="1"/>
+      <text x="295" y="172" class="flow-text-sm">TN-3</text>
+      <text x="245" y="210" class="flow-label">ALL 3 SIGN</text>
+
+      <!-- Arrow 2 -->
+      <line x1="322" y1="160" x2="362" y2="160" stroke="rgba(109,53,232,0.6)" stroke-width="1.5" marker-end="url(#arrowhead2)"/>
+      <text x="342" y="150" class="flow-text-sm">ZK Proof</text>
+
+      <!-- Midnight Network -->
+      <rect x="364" y="110" width="150" height="100" rx="8" class="flow-node-cyan"/>
+      <text x="439" y="142" class="flow-text" font-weight="700">Midnight</text>
+      <text x="439" y="158" class="flow-text" font-weight="700">Network</text>
+      <text x="439" y="178" class="flow-text-sm">Validates ZK proof</text>
+      <text x="439" y="194" class="flow-text-sm">against minted token</text>
+      <text x="439" y="226" class="flow-label">BLOCKCHAIN LAYER</text>
+
+      <!-- Arrow 3 -->
+      <line x1="516" y1="160" x2="556" y2="160" stroke="rgba(0,212,255,0.5)" stroke-width="1.5" marker-end="url(#arrowhead2c)"/>
+      <text x="536" y="150" class="flow-text-sm">Result</text>
+
+      <!-- Response -->
+      <rect x="558" y="110" width="150" height="100" rx="8" class="flow-node-success"/>
+      <text x="633" y="148" class="flow-text" font-weight="700">Verified</text>
+      <text x="633" y="166" class="flow-text">Selective Data</text>
+      <text x="633" y="182" class="flow-text">Returned</text>
+      <text x="633" y="226" class="flow-label">ZK RESULT</text>
+
+      <!-- Arrow 4 -->
+      <line x1="710" y1="160" x2="750" y2="160" stroke="rgba(34,197,94,0.5)" stroke-width="1.5" marker-end="url(#arrowhead2g)"/>
+
+      <!-- Authority Receives -->
+      <rect x="752" y="110" width="170" height="100" rx="8" fill="rgba(34,197,94,0.06)" stroke="rgba(34,197,94,0.3)" stroke-width="1.5"/>
+      <text x="837" y="140" class="flow-text" font-weight="700">Authority Receives</text>
+      <text x="837" y="158" class="flow-text-sm">Only what they need</text>
+      <text x="837" y="174" class="flow-text-sm">Police: Stolen? Yes/No</text>
+      <text x="837" y="190" class="flow-text-sm">Buyer: Clean title? Yes/No</text>
+      <text x="837" y="226" class="flow-label">SELECTIVE DISCLOSURE</text>
+
+      <!-- TAMPERING BRANCH (below) -->
+      <line x1="245" y1="222" x2="245" y2="268" stroke="rgba(239,68,68,0.4)" stroke-width="1.5" stroke-dasharray="4"/>
+      <rect x="170" y="270" width="150" height="50" rx="8" fill="rgba(239,68,68,0.07)" stroke="rgba(239,68,68,0.3)" stroke-width="1.5"/>
+      <text x="245" y="290" class="flow-text" fill="#ef4444">Any Node Missing</text>
+      <text x="245" y="308" class="flow-text-sm" fill="rgba(239,68,68,0.7)">→ Proof FAILS. Identity rejected.</text>
+
+      <!-- ── Performance annotation (timing callout) ── -->
+      <rect x="355" y="242" width="168" height="50" rx="8" fill="rgba(0,212,255,0.06)" stroke="rgba(0,212,255,0.28)" stroke-width="1"/>
+      <text x="439" y="257" class="flow-text" font-size="10" font-weight="600" fill="rgba(0,212,255,0.85)">Verification Speed</text>
+      <text x="439" y="272" class="flow-text-sm">≤30s live ZK proof</text>
+      <text x="439" y="284" class="flow-text-sm">&lt;1s cached status query</text>
+
+      <!-- ── PASS badge on verified result box ── -->
+      <rect x="582" y="86" width="50" height="18" rx="4" fill="rgba(34,197,94,0.22)" stroke="rgba(34,197,94,0.65)" stroke-width="1"/>
+      <text x="607" y="95" class="flow-text" font-size="9" font-weight="700" fill="#22c55e">✓ PASS</text>
+
+      <!-- ── FAIL badge on tamper branch ── -->
+      <rect x="192" y="263" width="40" height="18" rx="4" fill="rgba(239,68,68,0.22)" stroke="rgba(239,68,68,0.65)" stroke-width="1"/>
+      <text x="212" y="272" class="flow-text" font-size="9" font-weight="700" fill="#ef4444">✗ FAIL</text>
+
+      <!-- ── Role-based disclosure key ── -->
+      <rect x="558" y="242" width="360" height="50" rx="8" fill="rgba(109,53,232,0.04)" stroke="rgba(109,53,232,0.18)" stroke-width="1"/>
+      <text x="570" y="257" class="flow-text" font-size="9" font-weight="600" fill="#9b70f0" text-anchor="start">Selective Disclosure — Each role sees only:</text>
+      <text x="570" y="270" class="flow-text-sm" text-anchor="start" fill="#5a6a8a">Police: stolen? Yes/No  |  Insurer: identity valid? Yes/No</text>
+      <text x="570" y="282" class="flow-text-sm" text-anchor="start" fill="#5a6a8a">Buyer: clean title? Yes/No  |  Owner: full record</text>
+    </svg>
+  </div>
+
+  <!-- FLOW DIAGRAM 3: LIFECYCLE -->
+  <div class="diagram-wrapper">
+    <div class="diagram-title">Flow 3 — Vehicle Lifecycle Events on Midnight Network</div>
+    <svg viewBox="0 0 1000 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:600px;">
+      <defs>
+        <marker id="la" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="rgba(109,53,232,0.6)"/>
+        </marker>
+      </defs>
+
+      <!-- Manufacture -->
+      <circle cx="60" cy="100" r="40" fill="rgba(109,53,232,0.12)" stroke="rgba(109,53,232,0.5)" stroke-width="1.5"/>
+      <text x="60" y="96" class="flow-text" font-weight="700" font-size="11">MANU-</text>
+      <text x="60" y="111" class="flow-text" font-weight="700" font-size="11">FACTURE</text>
+      <text x="60" y="152" class="flow-label">TOKEN MINTED</text>
+
+      <line x1="102" y1="100" x2="138" y2="100" stroke="rgba(109,53,232,0.5)" stroke-width="1.5" marker-end="url(#la)"/>
+
+      <!-- Dealer -->
+      <circle cx="175" cy="100" r="32" fill="rgba(109,53,232,0.08)" stroke="rgba(109,53,232,0.35)" stroke-width="1.5"/>
+      <text x="175" y="98" class="flow-text" font-size="11">DEALER</text>
+      <text x="175" y="112" class="flow-text" font-size="11">SALE</text>
+      <text x="175" y="145" class="flow-label">OWNERSHIP TX</text>
+
+      <line x1="209" y1="100" x2="245" y2="100" stroke="rgba(109,53,232,0.5)" stroke-width="1.5" marker-end="url(#la)"/>
+
+      <!-- Service 1 -->
+      <circle cx="278" cy="100" r="28" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.3)" stroke-width="1.5"/>
+      <text x="278" y="98" class="flow-text" font-size="10">SERVICE</text>
+      <text x="278" y="112" class="flow-text" font-size="10">EVENT</text>
+      <text x="278" y="140" class="flow-label">LOGGED</text>
+
+      <line x1="308" y1="100" x2="344" y2="100" stroke="rgba(109,53,232,0.5)" stroke-width="1.5" marker-end="url(#la)"/>
+
+      <!-- Insurance Claim -->
+      <circle cx="375" cy="100" r="28" fill="rgba(245,158,11,0.08)" stroke="rgba(245,158,11,0.3)" stroke-width="1.5"/>
+      <text x="375" y="98" class="flow-text" font-size="10">INSUR.</text>
+      <text x="375" y="112" class="flow-text" font-size="10">CLAIM</text>
+      <text x="375" y="140" class="flow-label">ZK PROOF</text>
+
+      <line x1="405" y1="100" x2="441" y2="100" stroke="rgba(109,53,232,0.5)" stroke-width="1.5" marker-end="url(#la)"/>
+
+      <!-- Ownership 2 -->
+      <circle cx="473" cy="100" r="28" fill="rgba(109,53,232,0.08)" stroke="rgba(109,53,232,0.35)" stroke-width="1.5"/>
+      <text x="473" y="98" class="flow-text" font-size="10">OWNER</text>
+      <text x="473" y="112" class="flow-text" font-size="10">TRANSFER</text>
+      <text x="473" y="140" class="flow-label">NEW TX</text>
+
+      <line x1="503" y1="100" x2="539" y2="100" stroke="rgba(109,53,232,0.5)" stroke-width="1.5" marker-end="url(#la)"/>
+
+      <!-- Service 2 -->
+      <circle cx="570" cy="100" r="28" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.3)" stroke-width="1.5"/>
+      <text x="570" y="98" class="flow-text" font-size="10">SERVICE</text>
+      <text x="570" y="112" class="flow-text" font-size="10">EVENT</text>
+      <text x="570" y="140" class="flow-label">LOGGED</text>
+
+      <line x1="600" y1="100" x2="636" y2="100" stroke="rgba(109,53,232,0.5)" stroke-width="1.5" marker-end="url(#la)"/>
+
+      <!-- Stolen -->
+      <circle cx="666" cy="100" r="28" fill="rgba(239,68,68,0.08)" stroke="rgba(239,68,68,0.3)" stroke-width="1.5"/>
+      <text x="666" y="98" class="flow-text" font-size="10" fill="#ef4444">STOLEN</text>
+      <text x="666" y="112" class="flow-text" font-size="10" fill="#ef4444">REPORT</text>
+      <text x="666" y="140" class="flow-label">FLAGGED</text>
+
+      <line x1="696" y1="100" x2="732" y2="100" stroke="rgba(109,53,232,0.5)" stroke-width="1.5" marker-end="url(#la)"/>
+
+      <!-- Recovery / End of Life -->
+      <circle cx="764" cy="100" r="30" fill="rgba(34,197,94,0.08)" stroke="rgba(34,197,94,0.3)" stroke-width="1.5"/>
+      <text x="764" y="96" class="flow-text" font-size="10" fill="#22c55e">RECOVERY</text>
+      <text x="764" y="110" class="flow-text" font-size="10" fill="#22c55e">OR EOL</text>
+      <text x="764" y="143" class="flow-label">TOKEN UPDATED</text>
+
+      <!-- Midnight strip along bottom -->
+      <rect x="0" y="168" width="1000" height="20" rx="0" fill="rgba(0,212,255,0.04)" stroke="none"/>
+      <text x="500" y="182" class="flow-label" fill="rgba(0,212,255,0.5)">EVERY EVENT CREATES AN IMMUTABLE RECORD ON MIDNIGHT NETWORK — ZERO POSSIBILITY OF RETROACTIVE ALTERATION</text>
+
+      <!-- ── Timeline track line (subtle horizontal spine through circle centres) ── -->
+      <line x1="20" y1="100" x2="960" y2="100" stroke="rgba(109,53,232,0.12)" stroke-width="3" stroke-dasharray="6 4" stroke-linecap="round"/>
+
+      <!-- ── Phase / time context labels below each circle ── -->
+      <!-- MANUFACTURE (cx=60) -->
+      <text x="60" y="160" class="flow-label" fill="rgba(109,53,232,0.5)" font-size="8">YEAR 0</text>
+      <!-- DEALER SALE (cx=175) -->
+      <text x="175" y="160" class="flow-label" fill="rgba(109,53,232,0.4)" font-size="8">YEAR 0–1</text>
+      <!-- SERVICE (cx=278) -->
+      <text x="278" y="157" class="flow-label" fill="rgba(0,212,255,0.35)" font-size="8">YEAR 1–2</text>
+      <!-- INSUR. CLAIM (cx=375) -->
+      <text x="375" y="157" class="flow-label" fill="rgba(245,158,11,0.4)" font-size="8">YEAR 2</text>
+      <!-- OWNER TRANSFER (cx=473) -->
+      <text x="473" y="157" class="flow-label" fill="rgba(109,53,232,0.4)" font-size="8">YEAR 3–5</text>
+      <!-- SERVICE 2 (cx=570) -->
+      <text x="570" y="157" class="flow-label" fill="rgba(0,212,255,0.35)" font-size="8">YEAR 5+</text>
+      <!-- STOLEN (cx=666) -->
+      <text x="666" y="157" class="flow-label" fill="rgba(239,68,68,0.45)" font-size="8">IF STOLEN</text>
+      <!-- RECOVERY (cx=764) -->
+      <text x="764" y="157" class="flow-label" fill="rgba(34,197,94,0.45)" font-size="8">RESOLUTION</text>
+
+      <!-- ── Event type icons (small filled circles as event dots on track) ── -->
+      <circle cx="60" cy="100" r="5" fill="rgba(109,53,232,0.6)" opacity="0"/><!-- hidden, just for reference -->
+    </svg>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────────────── -->
+<!-- 04 — THE THREE HARDWARE SAFES -->
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="hardware">
+  <div class="section-label">04 — The Three Hardware Safes</div>
+  <h2>Three Secure Elements. Three Physical Locations. One Unbreakable Identity.</h2>
+  <p class="lead">Each new vehicle would carry three tamper-resistant Secure Element chips, embedded in separate physical locations throughout the vehicle. All three must participate to generate a valid identity proof. This is the foundation of the system's physical security.</p>
+
+  <div class="highlight-box" style="margin-bottom:2rem;">
+    <p>A "Secure Element" (SE) is a tamper-resistant hardware chip that stores cryptographic keys and performs cryptographic operations. It cannot be read out — even if physically disassembled. This same technology is used in bank cards, passports, SIM cards, and Apple Pay. The difference here is that three of them are deployed simultaneously, and all three must co-sign every authentication request.</p>
+  </div>
+
+  <div class="grid-3" style="margin-bottom:2rem;">
+    <!-- Node 1 -->
+    <div class="safe-card node-1">
+      <div class="safe-node-num">01</div>
+      <span class="tag tag-purple" style="margin-bottom:1rem;">Engine Node — EN-1</span>
+      <h3>ECU Secure Element</h3>
+      <p>Embedded within the Engine Control Unit housing during manufacture. Physically bonded to the ECU's internal circuit board — removal destroys the chip.</p>
+      <div class="safe-specs">
+        <div class="spec-row">
+          <span class="spec-key">Location</span>
+          <span class="spec-val">Engine bay, within sealed ECU housing</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Bonded to</span>
+          <span class="spec-val">Engine serial number + fuel system parameters</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Keypair</span>
+          <span class="spec-val">EN-1 independently generated Ed25519 keypair — public key committed to chain at manufacture</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Tamper response</span>
+          <span class="spec-val">Key wiped on physical breach or ECU swap attempt</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Bypassing it</span>
+          <span class="spec-val">Requires full engine replacement — an immediate red flag</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Node 2 -->
+    <div class="safe-card node-2">
+      <div class="safe-node-num">02</div>
+      <span class="tag tag-cyan" style="margin-bottom:1rem;">Chassis Node — CN-2</span>
+      <h3>Structural Chassis Element</h3>
+      <p>Embedded deep within the vehicle's structural frame — in the A-pillar or firewall — during the body-in-white stage of manufacturing, before the vehicle is painted and trimmed.</p>
+      <div class="safe-specs">
+        <div class="spec-row">
+          <span class="spec-key">Location</span>
+          <span class="spec-val">A-pillar or firewall, inaccessible without cutting the frame</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Bonded to</span>
+          <span class="spec-val">Chassis stamp number + structural weld point data</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Keypair</span>
+          <span class="spec-val">CN-2 independently generated Ed25519 keypair — public key committed to chain at manufacture</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Tamper response</span>
+          <span class="spec-val">Structural alert broadcast + key wipe on chassis cut</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Bypassing it</span>
+          <span class="spec-val">Requires destroying and rebuilding the vehicle's core frame</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Node 3 -->
+    <div class="safe-card node-3">
+      <div class="safe-node-num">03</div>
+      <span class="tag tag-success" style="margin-bottom:1rem;">Telematics Node — TN-3</span>
+      <h3>Connectivity Secure Element</h3>
+      <p>Embedded within the vehicle's telematics and over-the-air update module, behind the dashboard. This node acts as the communication orchestrator — it collects signatures from EN-1 and CN-2, assembles the signed witness data, and passes it to a local proof-generation component. The resulting ZK proof is then submitted to the Midnight Network.</p>
+      <div class="safe-specs">
+        <div class="spec-row">
+          <span class="spec-key">Location</span>
+          <span class="spec-val">Behind dashboard, within sealed telematics module</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Bonded to</span>
+          <span class="spec-val">Device identity + connectivity module serial</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Keypair</span>
+          <span class="spec-val">TN-3 independently generated Ed25519 keypair — public key committed to chain at manufacture</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Tamper response</span>
+          <span class="spec-val">Network-level alert to manufacturer + key wipe</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-key">Bypassing it</span>
+          <span class="spec-val">Requires full instrument cluster and connectivity module swap — triggers manufacturer notification</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight-box cyan">
+    <p><strong style="color:var(--cyan-main)">Why three nodes?</strong> A single chip can potentially be cloned by state-level actors using electron microscopes and sophisticated hardware attacks. Two chips are harder but not impossible to defeat simultaneously. Three chips embedded in physically separate, structurally different locations of the vehicle — requiring different technical specialisations to attack — makes simultaneous compromise effectively impossible at any meaningful scale. The cost and complexity of defeating all three exceeds the value of any single vehicle.</p>
+  </div>
+
+  <!-- HARDWARE DIAGRAM -->
+  <div class="diagram-wrapper">
+    <div class="diagram-title">Hardware Node Location — Vehicle Cross-Section (Schematic)</div>
+    <svg viewBox="0 0 960 500" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:640px;">
+      <defs>
+        <style>
+          .svg-mono  { font-family: 'IBM Plex Mono', monospace; }
+          .svg-head  { font-family: 'Exo 2', sans-serif; }
+          .svg-body  { font-family: 'IBM Plex Sans', sans-serif; }
+        </style>
+      </defs>
+
+      <!-- ═══ GROUND ═══ -->
+      <line x1="60" y1="447" x2="900" y2="447" stroke="rgba(109,53,232,0.18)" stroke-width="1.5"/>
+      <ellipse cx="475" cy="448" rx="355" ry="10" fill="rgba(109,53,232,0.07)"/>
+
+      <!-- ═══ CAR BODY — SIDE PROFILE (sedan, facing right) ═══ -->
+      <path d="
+        M 108 316
+        L 108 280
+        Q 116 256 150 250
+        L 268 244
+        L 312 208
+        Q 360 167 418 161
+        L 576 159
+        Q 638 161 675 191
+        L 722 208
+        Q 754 237 768 268
+        L 842 272
+        L 842 316 Z
+      " fill="rgba(7,12,28,0.96)" stroke="rgba(109,53,232,0.5)" stroke-width="2"/>
+
+      <!-- Hood highlight -->
+      <path d="M 150 250 L 268 244 L 312 208 L 300 212 L 260 247 L 152 253 Z"
+            fill="rgba(109,53,232,0.07)" stroke="rgba(109,53,232,0.15)" stroke-width="0.5"/>
+
+      <!-- Windscreen glass -->
+      <path d="M 312 208 Q 360 167 418 161 L 422 167 Q 368 174 318 213 Z"
+            fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.3)" stroke-width="1"/>
+
+      <!-- Side window -->
+      <path d="M 422 163 L 576 160 Q 634 162 670 188 L 658 192 Q 622 167 575 166 L 422 169 Z"
+            fill="rgba(0,212,255,0.05)" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+
+      <!-- Rear window -->
+      <path d="M 675 191 L 722 208 L 710 213 L 663 195 Z"
+            fill="rgba(0,212,255,0.04)" stroke="rgba(0,212,255,0.15)" stroke-width="1"/>
+
+      <!-- Door dividers (subtle) -->
+      <path d="M 418 163 L 416 316" stroke="rgba(109,53,232,0.1)" stroke-width="1" stroke-dasharray="3,4"/>
+      <path d="M 574 161 L 572 316" stroke="rgba(109,53,232,0.08)" stroke-width="1" stroke-dasharray="3,4"/>
+
+      <!-- Front bumper -->
+      <rect x="98" y="278" width="14" height="38" rx="4"
+            fill="rgba(109,53,232,0.28)" stroke="rgba(109,53,232,0.55)" stroke-width="1.5"/>
+      <!-- Rear bumper -->
+      <rect x="840" y="270" width="14" height="46" rx="4"
+            fill="rgba(109,53,232,0.22)" stroke="rgba(109,53,232,0.45)" stroke-width="1.5"/>
+
+      <!-- Headlight -->
+      <ellipse cx="110" cy="266" rx="6" ry="4" fill="rgba(0,212,255,0.35)" stroke="rgba(0,212,255,0.6)" stroke-width="1"/>
+
+      <!-- Wheel arches -->
+      <path d="M 172 316 Q 172 328 242 328 Q 312 328 312 316"
+            fill="rgba(7,12,28,0.98)" stroke="rgba(109,53,232,0.32)" stroke-width="1.5"/>
+      <path d="M 642 316 Q 642 328 714 328 Q 784 328 784 316"
+            fill="rgba(7,12,28,0.98)" stroke="rgba(109,53,232,0.32)" stroke-width="1.5"/>
+
+      <!-- Front wheel -->
+      <circle cx="242" cy="390" r="57" fill="rgba(5,9,22,0.95)" stroke="rgba(109,53,232,0.42)" stroke-width="2.5"/>
+      <circle cx="242" cy="390" r="35" fill="rgba(109,53,232,0.09)" stroke="rgba(109,53,232,0.5)" stroke-width="1.5"/>
+      <line x1="242" y1="355" x2="242" y2="372" stroke="rgba(109,53,232,0.35)" stroke-width="2"/>
+      <line x1="242" y1="408" x2="242" y2="425" stroke="rgba(109,53,232,0.35)" stroke-width="2"/>
+      <line x1="207" y1="390" x2="224" y2="390" stroke="rgba(109,53,232,0.35)" stroke-width="2"/>
+      <line x1="260" y1="390" x2="277" y2="390" stroke="rgba(109,53,232,0.35)" stroke-width="2"/>
+      <circle cx="242" cy="390" r="9" fill="rgba(109,53,232,0.55)"/>
+
+      <!-- Rear wheel -->
+      <circle cx="714" cy="390" r="57" fill="rgba(5,9,22,0.95)" stroke="rgba(109,53,232,0.42)" stroke-width="2.5"/>
+      <circle cx="714" cy="390" r="35" fill="rgba(109,53,232,0.09)" stroke="rgba(109,53,232,0.5)" stroke-width="1.5"/>
+      <line x1="714" y1="355" x2="714" y2="372" stroke="rgba(109,53,232,0.35)" stroke-width="2"/>
+      <line x1="714" y1="408" x2="714" y2="425" stroke="rgba(109,53,232,0.35)" stroke-width="2"/>
+      <line x1="679" y1="390" x2="696" y2="390" stroke="rgba(109,53,232,0.35)" stroke-width="2"/>
+      <line x1="732" y1="390" x2="749" y2="390" stroke="rgba(109,53,232,0.35)" stroke-width="2"/>
+      <circle cx="714" cy="390" r="9" fill="rgba(109,53,232,0.55)"/>
+
+      <!-- ═══ COMPONENT ZONES ═══ -->
+
+      <!-- Engine bay zone -->
+      <rect x="116" y="252" width="142" height="56" rx="5"
+            fill="rgba(109,53,232,0.05)" stroke="rgba(109,53,232,0.22)" stroke-width="1" stroke-dasharray="5,3"/>
+      <text x="187" y="272" text-anchor="middle" class="svg-mono"
+            font-size="8" fill="rgba(155,112,240,0.5)" letter-spacing="1">ENGINE BAY</text>
+
+      <!-- Dashboard / telematics zone -->
+      <rect x="320" y="215" width="124" height="55" rx="5"
+            fill="rgba(34,197,94,0.05)" stroke="rgba(34,197,94,0.22)" stroke-width="1" stroke-dasharray="5,3"/>
+      <text x="382" y="235" text-anchor="middle" class="svg-mono"
+            font-size="8" fill="rgba(34,197,94,0.5)" letter-spacing="1">DASHBOARD</text>
+
+      <!-- ═══ SE CHIPS ═══ -->
+
+      <!-- EN-1 (engine) -->
+      <rect x="128" y="258" width="52" height="34" rx="6"
+            fill="rgba(109,53,232,0.42)" stroke="#9b70f0" stroke-width="2"/>
+      <text x="154" y="274" text-anchor="middle" class="svg-head"
+            font-size="13" font-weight="700" fill="#e0d4ff">EN-1</text>
+      <text x="154" y="286" text-anchor="middle" class="svg-mono"
+            font-size="7" fill="rgba(224,212,255,0.65)">SE CHIP</text>
+
+      <!-- A-pillar structural column -->
+      <rect x="308" y="208" width="10" height="108" rx="3"
+            fill="rgba(0,212,255,0.13)" stroke="rgba(0,212,255,0.35)" stroke-width="1.5"/>
+      <!-- CN-2 (chassis / A-pillar) -->
+      <rect x="296" y="230" width="52" height="34" rx="6"
+            fill="rgba(0,180,220,0.38)" stroke="#00d4ff" stroke-width="2"/>
+      <text x="322" y="246" text-anchor="middle" class="svg-head"
+            font-size="13" font-weight="700" fill="#00e8ff">CN-2</text>
+      <text x="322" y="258" text-anchor="middle" class="svg-mono"
+            font-size="7" fill="rgba(0,212,255,0.65)">SE CHIP</text>
+
+      <!-- TN-3 (telematics) -->
+      <rect x="368" y="224" width="52" height="34" rx="6"
+            fill="rgba(34,197,94,0.38)" stroke="#22c55e" stroke-width="2"/>
+      <text x="394" y="240" text-anchor="middle" class="svg-head"
+            font-size="13" font-weight="700" fill="#4ade80">TN-3</text>
+      <text x="394" y="252" text-anchor="middle" class="svg-mono"
+            font-size="7" fill="rgba(34,197,94,0.65)">SE CHIP</text>
+
+      <!-- ═══ CAN BUS CONNECTIONS ═══ -->
+      <!-- EN-1 ↔ CN-2 -->
+      <path d="M 180 282 C 220 298 260 275 296 252"
+            fill="none" stroke="rgba(109,53,232,0.7)" stroke-width="1.5" stroke-dasharray="7,3"/>
+      <!-- CN-2 ↔ TN-3 -->
+      <path d="M 348 248 L 368 242"
+            fill="none" stroke="rgba(0,212,255,0.7)" stroke-width="1.5" stroke-dasharray="6,3"/>
+      <!-- EN-1 ↔ TN-3 (long diagonal) -->
+      <path d="M 180 278 C 260 306 320 298 368 248"
+            fill="none" stroke="rgba(34,197,94,0.35)" stroke-width="1" stroke-dasharray="4,5"/>
+
+      <!-- CAN bus label -->
+      <text x="248" y="348" text-anchor="middle" class="svg-mono"
+            font-size="9" fill="rgba(109,53,232,0.5)">── Encrypted CAN Bus · Challenge-Response Protocol ──</text>
+
+      <!-- ═══ CALLOUT LABELS — top row, clearly separated ═══ -->
+
+      <!-- EN-1 callout line + dot -->
+      <line x1="154" y1="258" x2="128" y2="90" stroke="#9b70f0" stroke-width="1.5"/>
+      <circle cx="128" cy="90" r="4" fill="#9b70f0"/>
+      <!-- EN-1 label box -->
+      <rect x="18" y="12" width="205" height="76" rx="9"
+            fill="rgba(109,53,232,0.13)" stroke="#9b70f0" stroke-width="1.5"/>
+      <line x1="18" y1="36" x2="223" y2="36" stroke="rgba(155,112,240,0.3)" stroke-width="1"/>
+      <text x="120" y="29" text-anchor="middle" class="svg-head"
+            font-size="10" font-weight="700" fill="#d4b8ff" letter-spacing="1">NODE 01 — EN-1</text>
+      <text x="120" y="50" text-anchor="middle" class="svg-body"
+            font-size="9" fill="rgba(238,242,255,0.85)">ECU Secure Element</text>
+      <text x="120" y="63" text-anchor="middle" class="svg-body"
+            font-size="9" fill="rgba(238,242,255,0.6)">Engine bay · embedded at manufacture</text>
+      <text x="120" y="77" text-anchor="middle" class="svg-body"
+            font-size="9" fill="rgba(239,100,100,0.85)">Key wipe on ECU housing breach</text>
+
+      <!-- CN-2 callout line + dot -->
+      <line x1="322" y1="230" x2="428" y2="90" stroke="#00d4ff" stroke-width="1.5"/>
+      <circle cx="428" cy="90" r="4" fill="#00d4ff"/>
+      <!-- CN-2 label box -->
+      <rect x="325" y="12" width="205" height="76" rx="9"
+            fill="rgba(0,212,255,0.09)" stroke="#00d4ff" stroke-width="1.5"/>
+      <line x1="325" y1="36" x2="530" y2="36" stroke="rgba(0,212,255,0.25)" stroke-width="1"/>
+      <text x="427" y="29" text-anchor="middle" class="svg-head"
+            font-size="10" font-weight="700" fill="#00d4ff" letter-spacing="1">NODE 02 — CN-2</text>
+      <text x="427" y="50" text-anchor="middle" class="svg-body"
+            font-size="9" fill="rgba(238,242,255,0.85)">Chassis Secure Element</text>
+      <text x="427" y="63" text-anchor="middle" class="svg-body"
+            font-size="9" fill="rgba(238,242,255,0.6)">A-pillar / structural firewall</text>
+      <text x="427" y="77" text-anchor="middle" class="svg-body"
+            font-size="9" fill="rgba(239,100,100,0.85)">Key wipe on frame cut or deformation</text>
+
+      <!-- TN-3 callout line + dot -->
+      <line x1="394" y1="224" x2="728" y2="90" stroke="#22c55e" stroke-width="1.5"/>
+      <circle cx="728" cy="90" r="4" fill="#22c55e"/>
+      <!-- TN-3 label box -->
+      <rect x="625" y="12" width="215" height="76" rx="9"
+            fill="rgba(34,197,94,0.09)" stroke="#22c55e" stroke-width="1.5"/>
+      <line x1="625" y1="36" x2="840" y2="36" stroke="rgba(34,197,94,0.25)" stroke-width="1"/>
+      <text x="732" y="29" text-anchor="middle" class="svg-head"
+            font-size="10" font-weight="700" fill="#4ade80" letter-spacing="1">NODE 03 — TN-3</text>
+      <text x="732" y="50" text-anchor="middle" class="svg-body"
+            font-size="9" fill="rgba(238,242,255,0.85)">Telematics Secure Element</text>
+      <text x="732" y="63" text-anchor="middle" class="svg-body"
+            font-size="9" fill="rgba(238,242,255,0.6)">Dashboard · witness data assembler</text>
+      <text x="732" y="77" text-anchor="middle" class="svg-body"
+            font-size="9" fill="rgba(239,100,100,0.85)">Key wipe + Midnight network alert</text>
+
+      <!-- ═══ BOTTOM ROW ═══ -->
+
+      <!-- Tamper response note -->
+      <rect x="18" y="440" width="360" height="46" rx="7"
+            fill="rgba(239,68,68,0.07)" stroke="rgba(239,68,68,0.32)" stroke-width="1.5"/>
+      <text x="198" y="458" text-anchor="middle" class="svg-mono"
+            font-size="9" font-weight="600" fill="rgba(239,100,100,0.9)" letter-spacing="0.5">⚠  TAMPER RESPONSE — any node disturbed</text>
+      <text x="198" y="474" text-anchor="middle" class="svg-body"
+            font-size="9" fill="rgba(239,100,100,0.65)">→ Immediate key wipe  ·  → Midnight alert  ·  → Identity proof fails</text>
+
+      <!-- Legend -->
+      <rect x="550" y="440" width="390" height="46" rx="7"
+            fill="rgba(0,0,0,0.22)" stroke="rgba(109,53,232,0.28)" stroke-width="1"/>
+      <rect x="562" y="452" width="11" height="11" rx="2" fill="rgba(109,53,232,0.78)"/>
+      <text x="580" y="462" class="svg-body"
+            font-size="9" fill="rgba(238,242,255,0.72)">EN-1  Engine Node</text>
+      <rect x="672" y="452" width="11" height="11" rx="2" fill="rgba(0,212,255,0.78)"/>
+      <text x="690" y="462" class="svg-body"
+            font-size="9" fill="rgba(238,242,255,0.72)">CN-2  Chassis Node</text>
+      <rect x="790" y="452" width="11" height="11" rx="2" fill="rgba(34,197,94,0.78)"/>
+      <text x="808" y="462" class="svg-body"
+            font-size="9" fill="rgba(238,242,255,0.72)">TN-3  Telematics</text>
+      <text x="745" y="477" text-anchor="middle" class="svg-mono"
+            font-size="9" fill="rgba(109,53,232,0.65)">All 3 must co-sign → Full Identity Proof</text>
+
+    </svg>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────────────── -->
+<!-- 05 — STAKEHOLDER SYSTEMS -->
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="stakeholders">
+  <div class="section-label">05 — Stakeholder Systems</div>
+  <h2>What Each Player Sees and Does</h2>
+  <p class="lead">One of the system's core advantages is that different stakeholders get exactly the information they need — and nothing more. This is selective disclosure in practice.</p>
+
+  <div class="print-hide" style="margin-bottom:1.5rem;padding:14px 18px;background:rgba(109,53,232,0.07);border:1px solid rgba(109,53,232,0.3);border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+    <span style="font-size:0.85rem;color:var(--text-secondary);">See this in action — run a live proof for each role with different vehicle scenarios.</span>
+    <a href="shieldvin-demo.html" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1.5px solid rgba(109,53,232,0.5);border-radius:6px;color:var(--purple-light);font-family:var(--font-body);font-size:0.82rem;font-weight:600;text-decoration:none;white-space:nowrap;background:rgba(109,53,232,0.06);">▶ Interactive Demo →</a>
+  </div>
+
+  <div class="stakeholder-tab-bar">
+    <button class="stab active" onclick="showStakeholder('manufacturer')">Manufacturer</button>
+    <button class="stab" onclick="showStakeholder('police')">Law Enforcement</button>
+    <button class="stab" onclick="showStakeholder('insurance')">Insurance</button>
+    <button class="stab" onclick="showStakeholder('dealer')">Dealership</button>
+    <button class="stab" onclick="showStakeholder('dmv')">Government / DMV</button>
+    <button class="stab" onclick="showStakeholder('buyer')">Vehicle Owner / Buyer</button>
+  </div>
+
+  <!-- MANUFACTURER -->
+  <div class="stakeholder-panel active" id="panel-manufacturer">
+    <div class="grid-2">
+      <div>
+        <h3>🏭 Car Manufacturer</h3>
+        <p>The manufacturer is the root of trust in the system. They initiate the Vehicle Identity Token at the point of manufacture and control the key generation ceremony. After manufacture, they retain a supervisory role but cannot alter the identity record.</p>
+        <h4>What they do</h4>
+        <p>Install the three Secure Element chips during vehicle assembly. Run the key generation ceremony that triggers each chip to generate its own independent keypair — the private key is created inside the chip and never leaves it. Extract the three public keys and mint the Vehicle Identity Token on Midnight Network, recording VIN, chassis number, engine serial, build spec hash, and all three public keys. Submit the first transaction that creates the authoritative record.</p>
+        <h4>What they can see</h4>
+        <p>Full build data for their own vehicles. Tamper alerts from any of the three nodes. Aggregated fleet-level identity verification statistics. Recall management — ability to flag specific VINs for safety actions without altering the identity record.</p>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:1rem;">
+          <h4>System Requirements</h4>
+          <div class="safe-specs">
+            <div class="spec-row"><span class="spec-key">Hardware</span><span class="spec-val">Secure Element provisioning line at the factory</span></div>
+            <div class="spec-row"><span class="spec-key">Software</span><span class="spec-val">Key generation ceremony tool + Midnight SDK integration</span></div>
+            <div class="spec-row"><span class="spec-key">Network</span><span class="spec-val">Secure connection to Midnight Network nodes at manufacture time</span></div>
+            <div class="spec-row"><span class="spec-key">Governance</span><span class="spec-val">Agreement on shared VSE-1 chip standard (see Framework section)</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h4>What They Cannot Do</h4>
+          <p style="margin:0;font-size:0.875rem;">After the minting event, the manufacturer cannot alter, forge, or replay a vehicle's identity. Each chip independently generated its own keypair in hardware isolation — no master key was ever created or shared. The manufacturer cannot access individual owner data. They cannot read the private state of another manufacturer's tokens.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAW ENFORCEMENT -->
+  <div class="stakeholder-panel" id="panel-police">
+    <div class="grid-2">
+      <div>
+        <h3>🚔 Law Enforcement</h3>
+        <p>Police and border control officers need fast, reliable answers about vehicle identity. The system gives them exactly that — a binary yes/no response on vehicle status, without requiring access to owner details or purchase history.</p>
+        <h4>What they see at a checkpoint</h4>
+        <p>An officer uses a certified verification device (phone app, patrol car terminal, or portable scanner). They trigger a verification request on the vehicle. The vehicle generates a ZK proof from all three nodes. Midnight validates it. The officer gets back a cached status response in under 1 second, or a live proof result in under 30 seconds when full hardware verification is required.</p>
+        <div class="highlight-box">
+          <p>The officer does not see the owner's name, address, or purchase price. They see: Is this vehicle authentic? Is it reported stolen? Are there any outstanding flags? That is all they need.</p>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:1rem;">
+          <h4>System Requirements</h4>
+          <div class="safe-specs">
+            <div class="spec-row"><span class="spec-key">Interface</span><span class="spec-val">Certified mobile app or patrol terminal integration</span></div>
+            <div class="spec-row"><span class="spec-key">Access level</span><span class="spec-val">Read-only — status queries only</span></div>
+            <div class="spec-row"><span class="spec-key">Response</span><span class="spec-val">Authentic / Stolen / Flagged / Unknown</span></div>
+            <div class="spec-row"><span class="spec-key">Speed</span><span class="spec-val">Under 30 seconds for full ZK proof on optimised SE hardware; cached status under 1 second</span></div>
+            <div class="spec-row"><span class="spec-key">Offline</span><span class="spec-val">Cached status with time-limited offline validity</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h4>Stolen Vehicle Reporting</h4>
+          <p style="margin:0;font-size:0.875rem;">Authorised law enforcement agencies can flag a Vehicle Identity Token as stolen via a secured portal. The flag is submitted as a transaction and finalised on the Midnight Network in the next block — typically within seconds. Once confirmed, any subsequent verification query on that VIN returns "STOLEN" status regardless of what any physical plate says. Cached status certificates for the vehicle are invalidated, reducing to a 1-hour TTL.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSURANCE -->
+  <div class="stakeholder-panel" id="panel-insurance">
+    <div class="grid-2">
+      <div>
+        <h3>🛡️ Insurance Companies</h3>
+        <p>Insurance companies currently price vehicle theft risk into all premiums. They have enormous financial incentive to support a system that makes VIN fraud impossible. They also benefit from verified ownership history when processing claims.</p>
+        <h4>What they can verify</h4>
+        <p>At policy inception, the insurer can request a ZK proof that confirms the vehicle's identity is valid and the applicant has legitimate title. At claim time, they can verify the vehicle's current ownership status, check for prior undisclosed claims, and confirm the vehicle identity has not been flagged since coverage began.</p>
+        <h4>What they cannot see</h4>
+        <p>Previous owners' personal details. Specific service history items not related to the claim. Location data or usage patterns.</p>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:1rem;">
+          <h4>System Requirements</h4>
+          <div class="safe-specs">
+            <div class="spec-row"><span class="spec-key">Integration</span><span class="spec-val">API connection to Midnight verification endpoint</span></div>
+            <div class="spec-row"><span class="spec-key">Access level</span><span class="spec-val">Verified ownership + claims history (ZK selective)</span></div>
+            <div class="spec-row"><span class="spec-key">Policy check</span><span class="spec-val">Trigger verification at inception, renewal, and claim time</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h4>Premium Impact</h4>
+          <p style="margin:0;font-size:0.875rem;">Vehicles enrolled in the system could qualify for a verified identity discount on premiums — incentivising consumer uptake while reducing the insurer's risk exposure. Early modelling suggests theft-related claims could drop significantly in participating fleets within 3–5 years.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEALERSHIP -->
+  <div class="stakeholder-panel" id="panel-dealer">
+    <div class="grid-2">
+      <div>
+        <h3>🚗 Dealerships (New &amp; Used)</h3>
+        <p>Dealerships are both sellers and buyers of vehicles. They currently rely on paper-based VIN checks and third-party history services that can be manipulated. The system gives dealers a cryptographically guaranteed identity check at point of trade.</p>
+        <h4>New vehicle sales</h4>
+        <p>The manufacturer transfers the Vehicle Identity Token to the dealer at delivery. The dealer transfers it to the buyer at point of sale. This becomes part of the standard handover documentation — a digital certificate of authentic identity delivered alongside the physical keys.</p>
+        <h4>Used vehicle trade-ins and purchases</h4>
+        <p>A dealer takes in a used vehicle and immediately runs a full identity verification. They see the clean ownership chain, service event count, and any flags. If the vehicle fails verification, the dealer is protected from unknowingly purchasing a stolen vehicle.</p>
+      </div>
+      <div>
+        <div class="card">
+          <h4>System Requirements</h4>
+          <div class="safe-specs">
+            <div class="spec-row"><span class="spec-key">Interface</span><span class="spec-val">Dealer portal web app or DMS integration</span></div>
+            <div class="spec-row"><span class="spec-key">At new sale</span><span class="spec-val">Token transfer transaction (ownership change recorded)</span></div>
+            <div class="spec-row"><span class="spec-key">At trade-in</span><span class="spec-val">Full identity verification + history summary</span></div>
+            <div class="spec-row"><span class="spec-key">What they see</span><span class="spec-val">Identity valid, owner count, service event count, any flags</span></div>
+            <div class="spec-row"><span class="spec-key">What they don't see</span><span class="spec-val">Previous owner personal details, claim amounts</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DMV -->
+  <div class="stakeholder-panel" id="panel-dmv">
+    <div class="grid-2">
+      <div>
+        <h3>🏛️ Government &amp; DMV / DVLA</h3>
+        <p>Government vehicle registration authorities become a participant in the ownership transfer chain rather than the primary source of truth. The blockchain record becomes the authoritative identity layer; government databases sync from it rather than being the sole record.</p>
+        <h4>What changes</h4>
+        <p>When a vehicle is sold and the token is transferred on the Midnight Network, the DMV system receives a cryptographically verified notification of the ownership change. The government can use this to auto-update registration records, eliminating the gap where a stolen and re-plated vehicle could be registered with forged paperwork.</p>
+        <h4>Cross-border cooperation</h4>
+        <p>Because the identity record lives on a global blockchain, a vehicle stolen in Germany and re-registered in a different country would fail a ZK verification at any connected checkpoint. The identity flag crosses borders instantly.</p>
+      </div>
+      <div>
+        <div class="card">
+          <h4>System Requirements</h4>
+          <div class="safe-specs">
+            <div class="spec-row"><span class="spec-key">Integration</span><span class="spec-val">Midnight webhook / API integration with DMV systems</span></div>
+            <div class="spec-row"><span class="spec-key">Access level</span><span class="spec-val">Ownership transfers, identity flags, recall status</span></div>
+            <div class="spec-row"><span class="spec-key">Can do</span><span class="spec-val">Add tax / registration records linked to token</span></div>
+            <div class="spec-row"><span class="spec-key">Cannot do</span><span class="spec-val">Alter the Vehicle Identity Token or ownership history</span></div>
+            <div class="spec-row"><span class="spec-key">Compliance</span><span class="spec-val">GDPR-friendly — no personal data on-chain</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUYER -->
+  <div class="stakeholder-panel" id="panel-buyer">
+    <div class="grid-2">
+      <div>
+        <h3>👤 Vehicle Owner / Buyer</h3>
+        <p>For the end consumer, the system should be invisible in day-to-day life. They do not need to understand blockchain or cryptography. They need to know their vehicle is protected and that they can prove it is theirs if needed.</p>
+        <h4>What changes for the owner</h4>
+        <p>When buying a new or used vehicle, the owner receives a digital ownership credential stored in a secure wallet app. This credential is their proof of title. If their vehicle is stolen, they report it through an authorised channel and the token is flagged immediately — preventing resale anywhere in the world.</p>
+        <h4>Privacy protection</h4>
+        <p>The owner's personal details are never stored on the blockchain. Their credential proves they hold valid title without revealing their name, address, or any personal information to the system.</p>
+      </div>
+      <div>
+        <div class="card">
+          <h4>Owner Experience</h4>
+          <div class="safe-specs">
+            <div class="spec-row"><span class="spec-key">At purchase</span><span class="spec-val">Receive digital ownership credential in wallet app</span></div>
+            <div class="spec-row"><span class="spec-key">Day to day</span><span class="spec-val">No interaction required — runs silently in background</span></div>
+            <div class="spec-row"><span class="spec-key">At resale</span><span class="spec-val">Transfer ownership credential to buyer via the app</span></div>
+            <div class="spec-row"><span class="spec-key">If stolen</span><span class="spec-val">Report theft — token flagged globally within minutes</span></div>
+            <div class="spec-row"><span class="spec-key">At service</span><span class="spec-val">Consent to service record being logged</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stakeholder access matrix -->
+  <div style="margin-top:2.5rem;">
+    <h3>Stakeholder Access Matrix</h3>
+    <table class="permission-matrix">
+      <thead>
+        <tr>
+          <th>Data / Action</th>
+          <th>Manufacturer</th>
+          <th>Police</th>
+          <th>Insurance</th>
+          <th>Dealer</th>
+          <th>Government</th>
+          <th>Owner</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Vehicle authentic? (Yes/No)</td><td class="perm-yes">✓ Full</td><td class="perm-yes">✓ Full</td><td class="perm-yes">✓ Full</td><td class="perm-yes">✓ Full</td><td class="perm-yes">✓ Full</td><td class="perm-yes">✓ Full</td></tr>
+        <tr><td>Stolen / flagged status</td><td class="perm-yes">✓</td><td class="perm-yes">✓ + Can set</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓ + Can set</td><td class="perm-yes">✓</td></tr>
+        <tr><td>Ownership count / transfer history</td><td class="perm-partial">Count only</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">Own only</td></tr>
+        <tr><td>Previous owner identities</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-no">—</td></tr>
+        <tr><td>Build specification data</td><td class="perm-yes">✓ Own fleet</td><td class="perm-no">—</td><td class="perm-partial">Basic</td><td class="perm-partial">Basic</td><td class="perm-partial">Basic</td><td class="perm-partial">Basic</td></tr>
+        <tr><td>Service event count</td><td class="perm-yes">✓</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-no">—</td><td class="perm-yes">✓</td></tr>
+        <tr><td>Insurance claim history</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓ Own claims</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">Own only</td></tr>
+        <tr><td>Recall / safety flags</td><td class="perm-yes">✓ + Can set</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td><td class="perm-yes">✓</td></tr>
+        <tr><td>Transfer / sell token</td><td class="perm-partial">At manufacture</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓ (new sales)</td><td class="perm-no">—</td><td class="perm-yes">✓</td></tr>
+        <tr><td>Flag vehicle as stolen</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-no">—</td><td class="perm-no">—</td><td class="perm-yes">✓</td><td class="perm-partial">Report only</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────────────── -->
+<!-- 06 — INDUSTRY FRAMEWORK -->
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="framework">
+  <div class="section-label">06 — Industry Framework</div>
+  <h2>What Car Manufacturers Would Need to Agree On</h2>
+  <p class="lead">For this system to work at scale, manufacturers cannot each build their own incompatible version. A shared framework of standards is required — covering the hardware chip, the data format, the smart contract interface, and the governance model.</p>
+
+  <p>This is not unprecedented. The automotive industry has done this before with OBD-II (the diagnostic port standard), with ISO standards for CAN bus communication, and with ISO 18000 for RFID in vehicle manufacturing. A new standard for cryptographic vehicle identity follows the same model.</p>
+
+  <div class="divider"></div>
+
+  <h3>VSE-1: Vehicle Secure Element Standard</h3>
+  <p>The foundational hardware standard. All manufacturers adopting the system must use chips that meet this specification.</p>
+
+  <div class="standard-item">
+    <p><span class="standard-code">VSE-1.1</span><strong style="color:var(--text-primary)">Physical Specification</strong> — Common form factor, operating temperature range, vibration and shock resistance meeting automotive-grade standards (AEC-Q100 Grade 1 or equivalent). Minimum IP67 rating. Designed for the lifetime of the vehicle (15+ years).</p>
+  </div>
+  <div class="standard-item">
+    <p><span class="standard-code">VSE-1.2</span><strong style="color:var(--text-primary)">Cryptographic Specification</strong> — Support for threshold key generation (3-of-3 scheme). Elliptic curve cryptography (minimum Ed25519 or equivalent). Hardware random number generator. Secure boot. Physical unclonable function (PUF) binding to manufacture-time state. Anti-rollback for firmware.</p>
+  </div>
+  <div class="standard-item">
+    <p><span class="standard-code">VSE-1.3</span><strong style="color:var(--text-primary)">Communication Specification</strong> — CAN bus or automotive Ethernet (AUTOSAR-compatible) interface for inter-node communication. Standardised command set for proof generation requests. Challenge-response protocol to prevent replay attacks.</p>
+  </div>
+  <div class="standard-item">
+    <p><span class="standard-code">VSE-1.4</span><strong style="color:var(--text-primary)">Tamper Response Specification</strong> — Mandatory key wipe on physical penetration of housing. Network alert transmission via TN-3 on tamper detection in EN-1 or CN-2. Tamper event logged immutably on the Midnight Network with timestamp.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <h3>VIT-1: Vehicle Identity Token Standard</h3>
+  <p>Defines the data structure of the identity record on Midnight Network.</p>
+
+  <div class="standard-item">
+    <p><span class="standard-code">VIT-1.1</span><strong style="color:var(--text-primary)">Required Fields (Public)</strong> — Token ID (UUID), manufacturer code (ISO 3166 + manufacturer ID), VIN hash (not plain VIN), token creation timestamp, current status (active / stolen / flagged / end-of-life), version of the VIT standard.</p>
+  </div>
+  <div class="standard-item">
+    <p><span class="standard-code">VIT-1.2</span><strong style="color:var(--text-primary)">Required Fields (Private / ZK-accessible)</strong> — Plain VIN, chassis number, engine serial, build spec hash, factory location code, production date. These are stored in the private state layer and accessible only via ZK proof to authorised roles.</p>
+  </div>
+  <div class="standard-item">
+    <p><span class="standard-code">VIT-1.3</span><strong style="color:var(--text-primary)">Ownership Record</strong> — On-chain ownership is represented as a cryptographic commitment (hash of owner secret + salt) — never a name or identity. Transfer count is publicly visible. The commitment is updated on each transfer. No personal identity is ever stored on-chain; ownership history is provable by count and verifiable ZK proof of the current commitment, without revealing individual owner details.</p>
+  </div>
+  <div class="standard-item">
+    <p><span class="standard-code">VIT-1.4</span><strong style="color:var(--text-primary)">Event Log</strong> — Standardised event types: MANUFACTURE, SALE, SERVICE, CLAIM, FLAG_STOLEN, FLAG_RECOVERED, FLAG_RECALL, END_OF_LIFE. Each event is a timestamped, immutable entry with the proof that authorised it.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <h3>VAP-1: Verification API &amp; Protocol Standard</h3>
+
+  <div class="standard-item">
+    <p><span class="standard-code">VAP-1.1</span><strong style="color:var(--text-primary)">Query Protocol</strong> — Standardised REST/GraphQL API for all external parties. Authentication via OAuth2 + role-based access tokens. Rate limiting per role. All queries logged for audit purposes.</p>
+  </div>
+  <div class="standard-item">
+    <p><span class="standard-code">VAP-1.2</span><strong style="color:var(--text-primary)">Response Format</strong> — Standardised JSON response schema. Status field always present. Data fields vary by role. Timestamp and proof hash included for auditability. Maximum response latency: 30 seconds for live vehicle ZK proof; under 1 second for cached status responses.</p>
+  </div>
+  <div class="standard-item">
+    <p><span class="standard-code">VAP-1.3</span><strong style="color:var(--text-primary)">Offline Mode</strong> — Cached status certificate format. Maximum cache validity: 24 hours for standard checks, 1 hour for stolen flag updates. Certificate anchored to a Midnight Network block hash and independently verifiable on-chain.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <h3>VGM-1: Governance Model</h3>
+  <p>The system needs a governance layer to manage standard updates, dispute resolution, and access revocation.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>Governance Body</h4>
+      <p>A standards consortium — similar to the W3C model — with seats for manufacturers (weighted by production volume), government representatives, insurance industry, and consumer advocacy groups. Midnight Network has a seat as the technical infrastructure provider.</p>
+      <p>Decisions on standard changes require a supermajority (two-thirds). Emergency security patches can be fast-tracked by a smaller executive committee.</p>
+    </div>
+    <div class="card">
+      <h4>Dispute Resolution</h4>
+      <p>When identity disputes arise — for example, two claims to the same VIN — the governance body's arbitration process is triggered. The on-chain audit trail provides the evidence. The process is defined in the VGM-1 protocol and outcomes are implemented via authorised smart contract calls.</p>
+      <p>This is particularly important for insurance disputes and legal proceedings involving vehicle identity.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────────────── -->
+<!-- 07 — INDUSTRIES AFFECTED -->
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="industries">
+  <div class="section-label">07 — Industries Affected</div>
+  <h2>Who This Changes — and How</h2>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-icon">🏭</div>
+      <h3>Automotive Manufacturing</h3>
+      <p>Manufacturers gain a powerful differentiator. A vehicle with cryptographic identity becomes a premium product feature — "this car cannot be stolen and resold." Manufacturing lines require integration of the chip provisioning process, which adds minimal cost per vehicle at scale.</p>
+      <span class="tag tag-purple">Primary stakeholder</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">🛡️</div>
+      <h3>Insurance Industry</h3>
+      <p>The biggest financial beneficiary. Theft-related claim costs drop directly. VIN fraud-related disputes are eliminated. Underwriting models for vehicles in the system improve significantly. Premium discounts become a competitive tool for acquiring customers.</p>
+      <span class="tag tag-purple">Primary stakeholder</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">🚔</div>
+      <h3>Law Enforcement</h3>
+      <p>Investigators gain an unambiguous, cryptographically secured record of vehicle identity. VIN cloning rings are disrupted at the fundamental level — the fraud becomes impossible rather than just harder to detect. Cross-border identity verification is standardised.</p>
+      <span class="tag tag-purple">Primary stakeholder</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">🏦</div>
+      <h3>Vehicle Finance &amp; Lending</h3>
+      <p>Banks and finance companies lending against vehicle assets get reliable verification that the collateral is authentic. Fraudulent finance applications using stolen vehicle VINs are blocked at the point of identity verification. Repossession processes are simplified.</p>
+      <span class="tag tag-cyan">Secondary stakeholder</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">🏛️</div>
+      <h3>Government &amp; Tax Authorities</h3>
+      <p>Vehicle registration databases become secondary to the blockchain record, reducing fraud in registration systems. Import/export vehicle fraud is disrupted. Accurate vehicle history supports more reliable taxation of vehicle sales.</p>
+      <span class="tag tag-cyan">Secondary stakeholder</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔩</div>
+      <h3>Parts &amp; Aftermarket</h3>
+      <p>The system extends naturally to major component authentication. Engine, transmission, and chassis part replacements can be logged against the vehicle's identity record, creating a verified service history that increases resale value and supports warranty claims.</p>
+      <span class="tag tag-cyan">Secondary stakeholder</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">🚢</div>
+      <h3>Shipping &amp; Logistics</h3>
+      <p>Vehicle export fraud — where stolen vehicles are shipped internationally with false identities — is disrupted. Port authorities can run identity verification on vehicles in transit. International law enforcement sharing is enabled through the common verification API.</p>
+      <span class="tag tag-cyan">Secondary stakeholder</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">🤝</div>
+      <h3>Used Vehicle Marketplace</h3>
+      <p>Online platforms for vehicle sales (classifieds, auction sites, dealers) can integrate the verification API to display confirmed identity status on listings. Consumers know within seconds whether a listed vehicle is authentic. Fraud listings are caught before they result in a sale.</p>
+      <span class="tag tag-cyan">Secondary stakeholder</span>
+    </div>
+    <div class="card">
+      <div class="card-icon">⚖️</div>
+      <h3>Legal &amp; Forensics</h3>
+      <p>The immutable audit trail becomes evidence in criminal prosecutions of vehicle theft rings. Legal disputes over vehicle ownership have a definitive, court-admissible record. Forensic investigators have a trusted reference against which physical evidence can be checked.</p>
+      <span class="tag tag-cyan">Secondary stakeholder</span>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-title">Estimated Annual Financial Benefit by Sector (First 5 Years of Adoption, USD)</div>
+    <canvas id="chartBenefit" height="250"></canvas>
+    <table class="print-only" style="display:none;margin-top:0.5rem;width:100%;border-collapse:collapse;font-size:9pt;">
+      <thead><tr><th style="text-align:left;padding:4px 8px;background:#040d1e;color:white;">Sector</th><th style="padding:4px 8px;background:#040d1e;color:white;">Estimated Benefit (5 Yr, USD)</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;">Insurance Industry</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$6.2B</td></tr>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;">Law Enforcement</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$1.8B</td></tr>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;">Vehicle Owners</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$3.4B</td></tr>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;">Manufacturers</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$0.9B</td></tr>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;">Government / DMV</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$0.5B</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────────────── -->
+<!-- 08 — WHY MIDNIGHT NETWORK -->
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="alternatives">
+  <div class="section-label">08 — Why Midnight Network</div>
+  <h2>Why Not Another Blockchain?</h2>
+  <p class="lead">Midnight Network is not the only blockchain. The choice is deliberate, and the alternatives were all considered. This section explains why each credible alternative fails on the specific requirements of this system — and why those failures are structural, not fixable.</p>
+
+  <div class="divider"></div>
+
+  <h3 style="margin-bottom:1.5rem;">The Four Requirements That Drive the Choice</h3>
+
+  <div class="grid-2" style="margin-bottom:2.5rem;">
+    <div class="card">
+      <div class="safe-specs">
+        <div class="spec-row"><span class="spec-key">Selective disclosure ZK proofs</span><span class="spec-val">Police see stolen/not-stolen. Insurers see ownership count. Owners see full record. The same on-chain data produces different outputs depending on who is asking — and the caller cannot see what they were not shown.</span></div>
+        <div class="spec-row"><span class="spec-key">No PII on-chain by design</span><span class="spec-val">Structural privacy, not encryption. Encrypted data is still data. The architecture must make it impossible to submit personal data to the chain in the first place.</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="safe-specs">
+        <div class="spec-row"><span class="spec-key">Enterprise-grade query confidentiality</span><span class="spec-val">Insurers and police will not use a system where their query patterns are visible on a public ledger — even if the response data is private.</span></div>
+        <div class="spec-row"><span class="spec-key">Regulatory acceptability</span><span class="spec-val">GDPR and CCPA compliance must be achievable by architecture, not by bolt-on arguments that a regulator can challenge.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <h3 style="margin-bottom:1.5rem;">The Alternatives</h3>
+
+  <div style="display:flex;flex-direction:column;gap:1.25rem;margin-bottom:2.5rem;">
+
+    <div class="card" style="border-left:3px solid var(--danger);">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.75rem;">
+        <h4 style="margin:0;">Ethereum (L1 and L2 rollups)</h4>
+        <span class="tag tag-danger">Eliminated</span>
+      </div>
+      <p style="margin-bottom:0.75rem;">All contract state on Ethereum is publicly readable. Every VIN, ownership hash, transfer event, and verification query is visible to any node operator. ZK-EVM rollups (StarkWare, zkSync, Polygon zkEVM) add proof-based computation but the underlying state model remains transparent — they prove correctness of computation, not confidentiality of data.</p>
+      <p style="margin:0;color:var(--text-secondary);font-size:0.875rem;"><strong style="color:var(--danger);">Reason:</strong> Public state model is structurally incompatible with selective disclosure. No role-based disclosure primitive exists. Query patterns visible. GDPR compliance arguments are fragile.</p>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--danger);">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.75rem;">
+        <h4 style="margin:0;">Cardano (native, without Midnight)</h4>
+        <span class="tag tag-danger">Eliminated</span>
+      </div>
+      <p style="margin-bottom:0.75rem;">Cardano's eUTXO model is well-understood and secure. Datum fields in a UTXO are readable by all nodes. There is no native ZK proof system and no selective disclosure primitive. ZK verification can be implemented in Plutus scripts but is expensive and not optimised for this use case.</p>
+      <p style="margin:0;color:var(--text-secondary);font-size:0.875rem;"><strong style="color:var(--danger);">Reason:</strong> Same public-state limitations as Ethereum. Midnight Network was built specifically as the Cardano partner chain to solve these problems — it is the correct layer.</p>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--warning);">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.75rem;">
+        <h4 style="margin:0;">Hedera Hashgraph</h4>
+        <span class="tag tag-warning">Insufficient</span>
+      </div>
+      <p style="margin-bottom:0.75rem;">Fast throughput, low fixed fees, and a governing council of recognisable corporate names (Google, IBM, Boeing). The Hedera Consensus Service (HCS) is used for supply chain audit logs and would make a capable tamper-evident event ledger. The EVM-compatible smart contract layer has the same public state problem as Ethereum. No native ZK proof layer. No selective disclosure primitive.</p>
+      <p style="margin:0;color:var(--text-secondary);font-size:0.875rem;"><strong style="color:var(--warning);">Reason:</strong> HCS could serve as a secondary audit log layer. It cannot produce privacy-preserving identity proofs. The centralised Governing Council also creates geopolitical dependency risk for a global vehicle identity standard.</p>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--warning);">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.75rem;">
+        <h4 style="margin:0;">Polygon ID (iden3 / Circom)</h4>
+        <span class="tag tag-warning">Wrong design space</span>
+      </div>
+      <p style="margin-bottom:0.75rem;">Polygon ID is the most technically relevant alternative — it uses ZK proofs for identity credentials and supports selective disclosure of credential attributes. It is actively used for digital identity applications. However, Polygon ID is designed for human identity credentials, not physical hardware-backed assets. There is no concept of a proof that must be co-signed by three hardware security modules embedded in a physical object. The credential model assumes a single human holder.</p>
+      <p style="margin:0;color:var(--text-secondary);font-size:0.875rem;"><strong style="color:var(--warning);">Reason:</strong> Credential model vs. physical asset model are different design spaces. The 3-of-3 SE chip co-signature — the core security mechanism — has no equivalent primitive in Polygon ID. Circom/Groth16 also requires a trusted setup ceremony per circuit, a governance complication for an evolving standard.</p>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--text-muted);">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.75rem;">
+        <h4 style="margin:0;">Existing Vehicle History Blockchains (VINchain, MOBI)</h4>
+        <span class="tag" style="background:rgba(90,106,138,0.15);border-color:rgba(90,106,138,0.3);color:var(--text-secondary);">Different category</span>
+      </div>
+      <p style="margin-bottom:0.75rem;">Blockchain-anchored vehicle history projects record service events, ownership transfers, and odometer readings with a tamper-evident ledger. They solve provenance transparency. They cannot prove that the physical vehicle present at a roadside check is the vehicle in the record — they rely on honest reporting by garages, dealers, and owners. A criminal can simply not report a theft, or clone a VIN from a legitimately maintained vehicle.</p>
+      <p style="margin:0;color:var(--text-secondary);font-size:0.875rem;"><strong style="color:var(--text-secondary);">Relationship:</strong> Complementary, not competing. ShieldVIN's lifecycle event log covers the same provenance ground as a by-product of the identity system. These projects could integrate with ShieldVIN as data consumers.</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <h3 style="margin-bottom:1.5rem;">Why Midnight Network Satisfies All Four Requirements</h3>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="safe-specs">
+        <div class="spec-row"><span class="spec-key">Selective disclosure</span><span class="spec-val">Native — the <code style="font-family:var(--font-mono);color:var(--cyan-main);font-size:0.85em;">disclose()</code> primitive in Compact controls exactly which fields leave the private witness. Role-based outputs are enforced in-circuit, not by application logic.</span></div>
+        <div class="spec-row"><span class="spec-key">No PII on-chain</span><span class="spec-val">The architecture separates public ledger state from private witness state. Private witness data never appears in plaintext on the network — it is used locally to generate the ZK proof, and only the proof is submitted.</span></div>
+        <div class="spec-row"><span class="spec-key">Query confidentiality</span><span class="spec-val">Query patterns are private. The fact that Insurer X queried VIN Y at time Z is not visible on-chain — unlike any public ledger alternative.</span></div>
+        <div class="spec-row"><span class="spec-key">Regulatory design</span><span class="spec-val">Privacy-by-default architecture supports GDPR Article 25 compliance by construction. No personal data is on-chain, so no personal data is subject to cross-border transfer rules or right-to-erasure conflicts.</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h4>Additional Advantages</h4>
+      <p><strong style="color:var(--text-primary)">PLONK proof system</strong> — Midnight uses a PLONK proof system with KZG polynomial commitments over the BLS12-381 pairing curve and JubJub Edwards curve for internal operations. Unlike Groth16 (used in many ZK identity systems), PLONK with a universal trusted setup does not require a new ceremony per circuit — making circuit upgrades and standard evolution practical without re-ceremony.</p>
+      <p><strong style="color:var(--text-primary)">Compact DSL</strong> — TypeScript-familiar syntax for ZK circuit development. Lower barrier than writing raw Circom or Rust circuits. Designed for application developers, not cryptographers.</p>
+      <p><strong style="color:var(--text-primary)">Cardano settlement layer</strong> — inherits Cardano's Ouroboros finality and established security properties. Not a new unproven network.</p>
+      <p><strong style="color:var(--text-primary)">Ecosystem precedent</strong> — AirLog, an aviation maintenance record privacy DApp, demonstrates the identical use-case pattern on Midnight — tamper-evident, privacy-preserving maintenance history for a regulated physical asset. ShieldVIN is the automotive equivalent at global scale.</p>
+      <p style="margin:0;"><strong style="color:var(--text-primary)">Strategic alignment</strong> — Midnight Network is actively seeking enterprise use cases that validate its "rational privacy" positioning at real-world scale. ShieldVIN is precisely that use case.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────────────── -->
+<!-- 09 — BUSINESS MODEL -->
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="business">
+  <div class="section-label">09 — Business Model</div>
+  <h2>How the Business Works</h2>
+  <p class="lead">The system operates on a consortium and licensing model, with revenue streams from manufacturers and verification users. DUST transaction fees on Midnight are consumed as an operational cost — driving consistent on-chain activity that benefits the Midnight Network economy. No single party owns the data; all parties pay for the access they use.</p>
+
+  <div class="grid-3" style="margin-bottom:2rem;">
+    <div class="card">
+      <div class="card-icon">💰</div>
+      <h3>Revenue Stream 1</h3>
+      <h4>Manufacturer Licensing</h4>
+      <p>A per-vehicle fee at the point of manufacture for each Vehicle Identity Token minted. At scale, this is a small cost per unit but represents significant volume given global new vehicle production of approximately 80 million units per year.</p>
+      <p>Estimated range: $8–$25 per vehicle minted, depending on volume tiers.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📡</div>
+      <h3>Revenue Stream 2</h3>
+      <h4>Verification API Access</h4>
+      <p>Insurance companies, dealers, fleet managers, and others pay for API access to run verification queries. Tiered pricing based on query volume and data access level. Law enforcement and government access provided under a subsidised government rate or via national government contracts.</p>
+      <p>Estimated range: $0.10–$2.50 per query based on volume and tier.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🌐</div>
+      <h3>Network Value</h3>
+      <h4>DUST Economy Contribution</h4>
+      <p>Every vehicle mint, ownership transfer, and verification query consumes DUST as the Midnight Network transaction fee. At tens of millions of events per year, ShieldVIN becomes one of Midnight's largest institutional on-chain activity drivers — not a revenue source for ShieldVIN, but a sustained demand signal for the network's token economy.</p>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>Cost Structure</h4>
+      <div class="safe-specs">
+        <div class="spec-row"><span class="spec-key">Chip R&amp;D</span><span class="spec-val">Partnership with existing SE manufacturers (NXP, Infineon, STMicroelectronics)</span></div>
+        <div class="spec-row"><span class="spec-key">Midnight integration</span><span class="spec-val">Smart contract development, SDK, API infrastructure</span></div>
+        <div class="spec-row"><span class="spec-key">Governance</span><span class="spec-val">Standards body operation and legal framework</span></div>
+        <div class="spec-row"><span class="spec-key">Go-to-market</span><span class="spec-val">Manufacturer partnerships, regulatory engagement, pilot programmes</span></div>
+        <div class="spec-row"><span class="spec-key">Ongoing ops</span><span class="spec-val">API infrastructure, validator operations, support</span></div>
+        <div class="spec-row"><span class="spec-key">DUST procurement</span><span class="spec-val">The consortium or system operator holds a DUST reserve to fund on-chain operations (mints, transfers, lifecycle events). DUST is acquired via Midnight Network's token market; reserve size scales with enrolled vehicle volume.</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <h4>Why Midnight Benefits</h4>
+      <p>This project is one of the most compelling enterprise blockchain use cases Midnight could launch with. A global vehicle identity system would:</p>
+      <p>Drive millions of DUST transactions per year. Establish Midnight as the infrastructure layer for a critical real-world industry. Create regulatory-compliant enterprise adoption that validates the "rational privacy" positioning. Demonstrate ZK proofs working at automotive scale and speed, proving the technology to other industries.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────────────── -->
+<!-- 10 — ROADMAP -->
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="roadmap">
+  <div class="section-label">10 — Rollout Roadmap</div>
+  <h2>Four Phases to Global Standard</h2>
+
+  <div class="phase-list" style="margin-top:2rem;">
+    <div class="phase-item active">
+      <div class="phase-tag">Phase 1 — Months 0–12</div>
+      <div class="phase-title">Proof of Concept &amp; Consortium Formation</div>
+      <p>Build the core smart contract on Midnight Network testnet. Develop the proof-of-concept key generation ceremony. Engage 2–3 founding manufacturer partners and a major insurer. Establish the governance consortium legal entity. Publish the VSE-1 draft standard for industry feedback.</p>
+      <p><strong style="color:var(--text-primary)">Success metric:</strong> Working ZK vehicle identity proof on testnet. Signed MoU with at least one Tier 1 manufacturer.</p>
+    </div>
+    <div class="phase-item">
+      <div class="phase-tag">Phase 2 — Months 12–30</div>
+      <div class="phase-title">Pilot Programme — Select Models</div>
+      <p>Deploy on a limited model line with a founding manufacturer partner (limited production run of 5,000–20,000 vehicles). Integrate with one or two national law enforcement agencies and two major insurers. Run live checkpoints in a defined geography. Collect performance data and refine the standard.</p>
+      <p><strong style="color:var(--text-primary)">Success metric:</strong> Live vehicles on public roads with working ZK identity. Zero false positives. Full live proof under 30 seconds; cached status queries under 1 second.</p>
+    </div>
+    <div class="phase-item">
+      <div class="phase-tag">Phase 3 — Months 30–54</div>
+      <div class="phase-title">Multi-Manufacturer Rollout</div>
+      <p>Expand to all vehicle lines of founding partners. Onboard additional manufacturers. Government integration in at least three jurisdictions. Insurance API live with commercial pricing. Full API open to dealerships and fleet operators.</p>
+      <p><strong style="color:var(--text-primary)">Success metric:</strong> 500,000+ vehicles enrolled. Active in 3+ countries. Commercially self-sustaining on verification fees.</p>
+    </div>
+    <div class="phase-item">
+      <div class="phase-tag">Phase 4 — Months 54+</div>
+      <div class="phase-title">Global Standard Adoption</div>
+      <p>Lobby for regulatory mandate in high-theft markets (similar to how the EU mandated vehicle immobilisers in 1998). Expand to all new vehicle production globally. Open the verification API to consumer-facing apps. Extend to component-level authentication for major parts.</p>
+      <p><strong style="color:var(--text-primary)">Success metric:</strong> Recognised in ISO or UNECE vehicle safety regulation. 5M+ vehicles enrolled.</p>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-title">Projected Vehicle Enrollment Growth (Cumulative, Units)</div>
+    <canvas id="chartGrowth" height="250"></canvas>
+    <table class="print-only" style="display:none;margin-top:0.5rem;width:100%;border-collapse:collapse;font-size:9pt;">
+      <thead><tr><th style="padding:4px 8px;background:#040d1e;color:white;">Year</th><th style="padding:4px 8px;background:#040d1e;color:white;">Cumulative Enrolled Vehicles</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">2026 (Y1)</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">~10,000</td></tr>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">2027 (Y2)</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">~85,000</td></tr>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">2028 (Y3)</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">~430,000</td></tr>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">2029 (Y4)</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">~1,900,000</td></tr>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">2030 (Y5)</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">~6,000,000</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── GANTT IMPLEMENTATION TIMELINE ── -->
+  <div style="margin-top:3rem;">
+    <div style="font-family:var(--font-body);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem;">Detailed Implementation Timeline — 60-Month Roadmap</div>
+    <div style="overflow-x:auto;">
+      <div style="min-width:620px;">
+
+        <!-- Phase header bands -->
+        <div style="display:flex;align-items:stretch;margin-bottom:2px;">
+          <div style="width:148px;flex-shrink:0;"></div>
+          <div style="flex:1;display:flex;gap:2px;font-family:var(--font-body);font-size:0.65rem;font-weight:600;height:22px;">
+            <div style="width:20%;background:rgba(109,53,232,0.28);border-radius:4px 0 0 4px;display:flex;align-items:center;justify-content:center;color:var(--purple-light);">Phase 1 · M0–12</div>
+            <div style="width:30%;background:rgba(109,53,232,0.16);display:flex;align-items:center;justify-content:center;color:var(--purple-light);">Phase 2 · M12–30</div>
+            <div style="width:40%;background:rgba(0,212,255,0.1);display:flex;align-items:center;justify-content:center;color:var(--cyan-main);">Phase 3 · M30–54</div>
+            <div style="width:10%;background:rgba(0,212,255,0.06);border-radius:0 4px 4px 0;display:flex;align-items:center;justify-content:center;color:var(--cyan-main);">Ph4</div>
+          </div>
+        </div>
+
+        <!-- Month ruler -->
+        <div style="display:flex;margin-bottom:10px;">
+          <div style="width:148px;flex-shrink:0;"></div>
+          <div style="flex:1;position:relative;height:14px;font-family:var(--font-mono);font-size:0.6rem;color:var(--text-muted);">
+            <span style="position:absolute;left:0%;">M0</span>
+            <span style="position:absolute;left:10%;">M6</span>
+            <span style="position:absolute;left:20%;">M12</span>
+            <span style="position:absolute;left:30%;">M18</span>
+            <span style="position:absolute;left:40%;">M24</span>
+            <span style="position:absolute;left:50%;">M30</span>
+            <span style="position:absolute;left:60%;">M36</span>
+            <span style="position:absolute;left:70%;">M42</span>
+            <span style="position:absolute;left:80%;">M48</span>
+            <span style="position:absolute;left:90%;">M54</span>
+            <span style="position:absolute;right:0;">M60</span>
+          </div>
+        </div>
+
+        <!-- Helper: phase stripe background used in each row -->
+        <!-- Row: Governance & Legal -->
+        <div style="display:flex;align-items:center;margin-bottom:6px;">
+          <div style="width:148px;flex-shrink:0;font-family:var(--font-body);font-size:0.7rem;color:var(--text-secondary);padding-right:12px;text-align:right;">Governance &amp; Legal</div>
+          <div style="flex:1;position:relative;height:24px;">
+            <div style="position:absolute;left:0;width:20%;height:100%;background:rgba(109,53,232,0.05);border-right:1px dashed rgba(109,53,232,0.18);pointer-events:none;"></div>
+            <div style="position:absolute;left:20%;width:30%;height:100%;background:rgba(109,53,232,0.03);border-right:1px dashed rgba(109,53,232,0.12);pointer-events:none;"></div>
+            <div style="position:absolute;left:50%;width:40%;height:100%;background:rgba(0,212,255,0.02);border-right:1px dashed rgba(0,212,255,0.1);pointer-events:none;"></div>
+            <div title="Consortium legal entity setup" style="position:absolute;left:0%;width:10%;height:20px;top:2px;background:rgba(109,53,232,0.72);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:white;white-space:nowrap;">Consortium</span></div>
+            <div title="VSE-1 and VGM-1 draft standards published for industry feedback" style="position:absolute;left:10%;width:10%;height:20px;top:2px;background:rgba(109,53,232,0.55);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:white;white-space:nowrap;">Standards Draft</span></div>
+            <div title="Standards ratification via ISO / SAE working group" style="position:absolute;left:40%;width:20%;height:20px;top:2px;background:rgba(109,53,232,0.42);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:white;white-space:nowrap;">Standards Ratification</span></div>
+          </div>
+        </div>
+
+        <!-- Row: Smart Contract & ZK -->
+        <div style="display:flex;align-items:center;margin-bottom:6px;">
+          <div style="width:148px;flex-shrink:0;font-family:var(--font-body);font-size:0.7rem;color:var(--text-secondary);padding-right:12px;text-align:right;">Smart Contract &amp; ZK</div>
+          <div style="flex:1;position:relative;height:24px;">
+            <div style="position:absolute;left:0;width:20%;height:100%;background:rgba(109,53,232,0.05);border-right:1px dashed rgba(109,53,232,0.18);pointer-events:none;"></div>
+            <div style="position:absolute;left:20%;width:30%;height:100%;background:rgba(109,53,232,0.03);border-right:1px dashed rgba(109,53,232,0.12);pointer-events:none;"></div>
+            <div style="position:absolute;left:50%;width:40%;height:100%;background:rgba(0,212,255,0.02);border-right:1px dashed rgba(0,212,255,0.1);pointer-events:none;"></div>
+            <div title="Midnight testnet — Compact ZK contract development" style="position:absolute;left:0%;width:20%;height:20px;top:2px;background:rgba(0,212,255,0.68);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:#040d1e;font-weight:600;white-space:nowrap;">Testnet Development</span></div>
+            <div title="ZK proof circuit optimisation targeting sub-30s on SE hardware" style="position:absolute;left:20%;width:20%;height:20px;top:2px;background:rgba(0,212,255,0.52);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:#040d1e;font-weight:600;white-space:nowrap;">ZK Optimisation</span></div>
+            <div title="Mainnet deployment on Midnight Network" style="position:absolute;left:40%;width:10%;height:20px;top:2px;background:rgba(0,212,255,0.38);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:#040d1e;font-weight:600;white-space:nowrap;">Mainnet</span></div>
+          </div>
+        </div>
+
+        <!-- Row: Hardware (SE Chips) -->
+        <div style="display:flex;align-items:center;margin-bottom:6px;">
+          <div style="width:148px;flex-shrink:0;font-family:var(--font-body);font-size:0.7rem;color:var(--text-secondary);padding-right:12px;text-align:right;">Hardware (SE Chips)</div>
+          <div style="flex:1;position:relative;height:24px;">
+            <div style="position:absolute;left:0;width:20%;height:100%;background:rgba(109,53,232,0.05);border-right:1px dashed rgba(109,53,232,0.18);pointer-events:none;"></div>
+            <div style="position:absolute;left:20%;width:30%;height:100%;background:rgba(109,53,232,0.03);border-right:1px dashed rgba(109,53,232,0.12);pointer-events:none;"></div>
+            <div style="position:absolute;left:50%;width:40%;height:100%;background:rgba(0,212,255,0.02);border-right:1px dashed rgba(0,212,255,0.1);pointer-events:none;"></div>
+            <div title="VSE-1 hardware specification and chip prototype production" style="position:absolute;left:10%;width:20%;height:20px;top:2px;background:rgba(155,112,240,0.72);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:white;white-space:nowrap;">VSE-1 Spec &amp; Proto</span></div>
+            <div title="Formal chip security certification" style="position:absolute;left:30%;width:20%;height:20px;top:2px;background:rgba(155,112,240,0.55);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:white;white-space:nowrap;">Certification</span></div>
+            <div title="Volume supply agreements with chip manufacturers" style="position:absolute;left:50%;width:20%;height:20px;top:2px;background:rgba(155,112,240,0.38);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:white;white-space:nowrap;">Volume Supply</span></div>
+          </div>
+        </div>
+
+        <!-- Row: OEM Partnerships -->
+        <div style="display:flex;align-items:center;margin-bottom:6px;">
+          <div style="width:148px;flex-shrink:0;font-family:var(--font-body);font-size:0.7rem;color:var(--text-secondary);padding-right:12px;text-align:right;">OEM Partnerships</div>
+          <div style="flex:1;position:relative;height:24px;">
+            <div style="position:absolute;left:0;width:20%;height:100%;background:rgba(109,53,232,0.05);border-right:1px dashed rgba(109,53,232,0.18);pointer-events:none;"></div>
+            <div style="position:absolute;left:20%;width:30%;height:100%;background:rgba(109,53,232,0.03);border-right:1px dashed rgba(109,53,232,0.12);pointer-events:none;"></div>
+            <div style="position:absolute;left:50%;width:40%;height:100%;background:rgba(0,212,255,0.02);border-right:1px dashed rgba(0,212,255,0.1);pointer-events:none;"></div>
+            <div title="Initial manufacturer engagement and MoU signing" style="position:absolute;left:0%;width:20%;height:20px;top:2px;background:rgba(34,197,94,0.72);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:#040d1e;font-weight:600;white-space:nowrap;">Engagement &amp; MoU</span></div>
+            <div title="Pilot model line integration with founding OEM partner" style="position:absolute;left:20%;width:30%;height:20px;top:2px;background:rgba(34,197,94,0.55);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:#040d1e;font-weight:600;white-space:nowrap;">Pilot Integration</span></div>
+            <div title="Full fleet rollout across all model lines and additional manufacturers" style="position:absolute;left:50%;width:40%;height:20px;top:2px;background:rgba(34,197,94,0.38);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:#040d1e;font-weight:600;white-space:nowrap;">Full Fleet Rollout</span></div>
+          </div>
+        </div>
+
+        <!-- Row: Pilot Programme -->
+        <div style="display:flex;align-items:center;margin-bottom:6px;">
+          <div style="width:148px;flex-shrink:0;font-family:var(--font-body);font-size:0.7rem;color:var(--text-secondary);padding-right:12px;text-align:right;">Pilot Programme (UK)</div>
+          <div style="flex:1;position:relative;height:24px;">
+            <div style="position:absolute;left:0;width:20%;height:100%;background:rgba(109,53,232,0.05);border-right:1px dashed rgba(109,53,232,0.18);pointer-events:none;"></div>
+            <div style="position:absolute;left:20%;width:30%;height:100%;background:rgba(109,53,232,0.03);border-right:1px dashed rgba(109,53,232,0.12);pointer-events:none;"></div>
+            <div style="position:absolute;left:50%;width:40%;height:100%;background:rgba(0,212,255,0.02);border-right:1px dashed rgba(0,212,255,0.1);pointer-events:none;"></div>
+            <div title="Pilot design, geography selection and regulatory clearance" style="position:absolute;left:20%;width:10%;height:20px;top:2px;background:rgba(245,158,11,0.72);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:#040d1e;font-weight:600;white-space:nowrap;">Setup</span></div>
+            <div title="10,000–20,000 live vehicles on UK public roads" style="position:absolute;left:30%;width:20%;height:20px;top:2px;background:rgba(245,158,11,0.55);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:#040d1e;font-weight:600;white-space:nowrap;">Live Vehicles on Road</span></div>
+          </div>
+        </div>
+
+        <!-- Row: Regulatory Engagement -->
+        <div style="display:flex;align-items:center;margin-bottom:6px;">
+          <div style="width:148px;flex-shrink:0;font-family:var(--font-body);font-size:0.7rem;color:var(--text-secondary);padding-right:12px;text-align:right;">Regulatory</div>
+          <div style="flex:1;position:relative;height:24px;">
+            <div style="position:absolute;left:0;width:20%;height:100%;background:rgba(109,53,232,0.05);border-right:1px dashed rgba(109,53,232,0.18);pointer-events:none;"></div>
+            <div style="position:absolute;left:20%;width:30%;height:100%;background:rgba(109,53,232,0.03);border-right:1px dashed rgba(109,53,232,0.12);pointer-events:none;"></div>
+            <div style="position:absolute;left:50%;width:40%;height:100%;background:rgba(0,212,255,0.02);border-right:1px dashed rgba(0,212,255,0.1);pointer-events:none;"></div>
+            <div title="UK and EU regulatory engagement and type approval planning" style="position:absolute;left:10%;width:20%;height:20px;top:2px;background:rgba(239,68,68,0.62);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:white;white-space:nowrap;">UK/EU Engagement</span></div>
+            <div title="Integration with government registries in 3+ jurisdictions" style="position:absolute;left:50%;width:30%;height:20px;top:2px;background:rgba(239,68,68,0.45);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:white;white-space:nowrap;">Multi-Jurisdiction</span></div>
+            <div title="Lobbying for regulatory mandate — ISO / UNECE safety regulation" style="position:absolute;left:90%;width:10%;height:20px;top:2px;background:rgba(239,68,68,0.32);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:white;white-space:nowrap;">Mandate</span></div>
+          </div>
+        </div>
+
+        <!-- Row: Commercial API -->
+        <div style="display:flex;align-items:center;margin-bottom:14px;">
+          <div style="width:148px;flex-shrink:0;font-family:var(--font-body);font-size:0.7rem;color:var(--text-secondary);padding-right:12px;text-align:right;">Commercial API</div>
+          <div style="flex:1;position:relative;height:24px;">
+            <div style="position:absolute;left:0;width:20%;height:100%;background:rgba(109,53,232,0.05);border-right:1px dashed rgba(109,53,232,0.18);pointer-events:none;"></div>
+            <div style="position:absolute;left:20%;width:30%;height:100%;background:rgba(109,53,232,0.03);border-right:1px dashed rgba(109,53,232,0.12);pointer-events:none;"></div>
+            <div style="position:absolute;left:50%;width:40%;height:100%;background:rgba(0,212,255,0.02);border-right:1px dashed rgba(0,212,255,0.1);pointer-events:none;"></div>
+            <div title="Beta API access for early partner integrations" style="position:absolute;left:30%;width:10%;height:20px;top:2px;background:rgba(20,184,166,0.72);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:white;white-space:nowrap;">Beta</span></div>
+            <div title="Commercial API launch — insurer and dealer pricing live" style="position:absolute;left:40%;width:20%;height:20px;top:2px;background:rgba(20,184,166,0.58);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:white;white-space:nowrap;">Commercial Launch</span></div>
+            <div title="Enterprise scale — full insurance and government API at volume" style="position:absolute;left:60%;width:40%;height:20px;top:2px;background:rgba(20,184,166,0.4);border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;"><span style="font-family:var(--font-body);font-size:0.6rem;color:white;white-space:nowrap;">Enterprise Scale</span></div>
+          </div>
+        </div>
+
+        <!-- Key Milestones row -->
+        <div style="display:flex;align-items:flex-start;">
+          <div style="width:148px;flex-shrink:0;font-family:var(--font-body);font-size:0.62rem;color:var(--text-muted);padding-right:12px;text-align:right;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;padding-top:2px;">Key Milestones</div>
+          <div style="flex:1;position:relative;height:36px;">
+            <div title="Testnet ZK proof working and MoU signed with first OEM" style="position:absolute;left:20%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px;">
+              <div style="width:9px;height:9px;background:var(--purple-main);transform:rotate(45deg);flex-shrink:0;"></div>
+              <span style="font-family:var(--font-body);font-size:0.55rem;color:var(--text-muted);white-space:nowrap;">M12: Testnet + MoU</span>
+            </div>
+            <div title="Pilot complete — 10k–20k vehicles live on UK roads" style="position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px;">
+              <div style="width:9px;height:9px;background:var(--cyan-main);transform:rotate(45deg);flex-shrink:0;"></div>
+              <span style="font-family:var(--font-body);font-size:0.55rem;color:var(--text-muted);white-space:nowrap;">M30: Pilot Complete</span>
+            </div>
+            <div title="500,000+ vehicles enrolled across 3+ countries" style="position:absolute;left:90%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px;">
+              <div style="width:9px;height:9px;background:var(--cyan-main);transform:rotate(45deg);flex-shrink:0;"></div>
+              <span style="font-family:var(--font-body);font-size:0.55rem;color:var(--text-muted);white-space:nowrap;">M54: 500k+ Vehicles</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────────────── -->
+<!-- 11 — RISK ANALYSIS -->
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="risks">
+  <div class="section-label">11 — Risk Analysis</div>
+  <h2>Risks and Mitigations</h2>
+  <p class="lead">Every significant infrastructure project carries risks. Being clear-eyed about them is part of building a credible proposal.</p>
+
+  <h3 style="margin-bottom:1rem;">Technical Risks</h3>
+  <table class="risk-table">
+    <thead>
+      <tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Secure Element chip can be physically attacked and key extracted</td>
+        <td class="risk-low">Low</td>
+        <td class="risk-high">High</td>
+        <td>3-node requirement means one chip compromise is insufficient. Regular chip security certification. Side-channel attack resistance built into VSE-1 spec.</td>
+      </tr>
+      <tr>
+        <td>Node communication intercepted — man-in-the-middle on CAN bus</td>
+        <td class="risk-med">Medium</td>
+        <td class="risk-med">Medium</td>
+        <td>All inter-node communication is encrypted and uses challenge-response nonces. Replay attacks are blocked by design. Challenge is unique per session.</td>
+      </tr>
+      <tr>
+        <td>Midnight Network downtime or outage</td>
+        <td class="risk-low">Low</td>
+        <td class="risk-med">Medium</td>
+        <td>Offline status certificates allow verification to continue for up to 24 hours without live network access. Decentralised validator set means no single point of failure.</td>
+      </tr>
+      <tr>
+        <td>Quantum computing attack on elliptic curve cryptography</td>
+        <td class="risk-low">Low (10+ years)</td>
+        <td class="risk-high">High</td>
+        <td>VSE-1 standard includes a crypto-agility requirement — chips must support firmware updates to post-quantum algorithms when they become standardised. Governance body monitors this.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin:2rem 0 1rem;">Commercial &amp; Adoption Risks</h3>
+  <table class="risk-table">
+    <thead>
+      <tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Manufacturers refuse to agree on a common standard (standards war)</td>
+        <td class="risk-med">Medium</td>
+        <td class="risk-high">High</td>
+        <td>Engage neutral standards bodies (ISO, SAE) as the formal custodians of the standard. Start with willing early adopters. Insurance and government pressure accelerates adoption.</td>
+      </tr>
+      <tr>
+        <td>Consumer resistance to "tracking" technology</td>
+        <td class="risk-med">Medium</td>
+        <td class="risk-med">Medium</td>
+        <td>Clear, consistent privacy messaging. The system does not track location. Owner controls their data. ZK proofs mean even verification queries reveal nothing about the owner.</td>
+      </tr>
+      <tr>
+        <td>Cost of chip integration adds to vehicle price in a price-sensitive market</td>
+        <td class="risk-med">Medium</td>
+        <td class="risk-low">Low</td>
+        <td>At scale, three SE chips add approximately $15–$40 to vehicle cost. Insurance premium discounts of $50–$200/year more than offset this for consumers.</td>
+      </tr>
+      <tr>
+        <td>Competing solution developed by a rival blockchain</td>
+        <td class="risk-low">Low</td>
+        <td class="risk-med">Medium</td>
+        <td>First-mover advantage is significant in standards. If the VSE-1 and VIT-1 standards are adopted by manufacturers first, competing systems face massive switching costs.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin:2rem 0 1rem;">Regulatory Risks</h3>
+  <table class="risk-table">
+    <thead>
+      <tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Regulatory bodies refuse to accept blockchain-based identity records</td>
+        <td class="risk-med">Medium</td>
+        <td class="risk-high">High</td>
+        <td>Engage regulators early in pilot phase. Build the verification API to produce outputs compatible with existing government database formats. Position as a supplement to, not replacement of, existing systems initially.</td>
+      </tr>
+      <tr>
+        <td>GDPR or similar privacy regulation creates compliance issues</td>
+        <td class="risk-low">Low</td>
+        <td class="risk-med">Medium</td>
+        <td>Midnight's ZK architecture means personal data is never on-chain by design. The system is GDPR-compliant from the ground up. Engage a privacy law firm to validate the architecture before launch.</td>
+      </tr>
+      <tr>
+        <td>Jurisdictional fragmentation — different countries require different implementations</td>
+        <td class="risk-high">High</td>
+        <td class="risk-med">Medium</td>
+        <td>Design the API with jurisdiction-specific response profiles. Governance body includes government representatives from multiple jurisdictions. Start in two or three aligned markets (e.g., UK + Germany + South Africa).</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="divider" style="margin-top:3rem;"></div>
+
+  <h3 style="margin:2rem 0 1rem;">Regulatory Landscape by Jurisdiction</h3>
+  <p>The jurisdictional fragmentation risk is real but manageable. The following table maps the key regulatory touchpoints in the four primary target markets. None of these regulations prohibit ShieldVIN — several actively incentivise it.</p>
+
+  <div style="overflow-x:auto;margin-top:1.5rem;">
+  <table class="risk-table" style="min-width:700px;">
+    <thead>
+      <tr><th style="width:12%">Market</th><th style="width:22%">Relevant Regulations</th><th style="width:30%">Impact on ShieldVIN</th><th style="width:36%">Path to Compliance</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>European Union</strong></td>
+        <td>GDPR (Regulation 2016/679) · eIDAS 2.0 · EU Type Approval Regulation (2018/858) · Directive 2019/1 (competition in automotive aftermarket)</td>
+        <td>GDPR is the dominant constraint. eIDAS 2.0 introduces a European digital identity framework that ShieldVIN is architecturally aligned with. Type Approval regulation governs changes to vehicle components — SE chip installation requires type approval pathway.</td>
+        <td>No PII on-chain satisfies GDPR by design. Engage the European Data Protection Board for an informal opinion before Phase 2. Work with UNECE WP.29 (vehicle regulations) to define an SE chip installation as a certifiable option rather than a modification. Participate in eIDAS 2.0 working groups.</td>
+      </tr>
+      <tr>
+        <td><strong>United Kingdom</strong></td>
+        <td>UK GDPR · Data Protection Act 2018 · Vehicle Excise and Registration Act 1994 · Road Traffic Act 1988 · DVLA regulations</td>
+        <td>UK GDPR (post-Brexit) mirrors EU GDPR but the UK ICO is a single regulator — one engagement point. DVLA is the national vehicle registry. Road Traffic Act defines what constitutes acceptable vehicle identification for law enforcement. Single jurisdiction makes the UK the ideal first market.</td>
+        <td>Engage the ICO at pilot stage for a Data Protection Impact Assessment (DPIA) validation. Work with DVLA and DVSA on the VAP-1 API specification to ensure outputs are accepted for registration and enforcement purposes. NPCC engagement for law enforcement integration.</td>
+      </tr>
+      <tr>
+        <td><strong>United States</strong></td>
+        <td>CCPA / CPRA (California) · State motor vehicle laws (50 states) · NMVTIS (49 U.S.C. § 30502) · NHTSA regulations · UCC Article 9 (secured transactions)</td>
+        <td>No federal privacy law equivalent to GDPR — but CCPA/CPRA applies to California residents and functions as a de facto national standard for consumer-facing products. NMVTIS requires reporting of vehicle history data. State-level vehicle title laws are fragmented across 50 jurisdictions — this is the primary complexity in the US market.</td>
+        <td>Architecture already satisfies CCPA (no personal data on-chain). For NMVTIS: build a read/write integration so ShieldVIN lifecycle events automatically update NMVTIS records — this turns a regulatory obligation into a feature. Engage AAMVA (American Association of Motor Vehicle Administrators) to develop a model state statute for ShieldVIN-authenticated title records. Start with 3–5 state pilots rather than national rollout.</td>
+      </tr>
+      <tr>
+        <td><strong>South Africa</strong></td>
+        <td>POPIA (Protection of Personal Information Act, 2013) · National Road Traffic Act 93 of 1996 · eNaTIS (National Traffic Information System) regulations · National Credit Act (vehicle finance)</td>
+        <td>South Africa has one of the highest vehicle theft rates globally — making regulatory alignment a shared government priority. POPIA is aligned with GDPR principles and the no-PII-on-chain architecture satisfies it by design. eNaTIS is the national vehicle registry equivalent of DVLA. Single national system reduces fragmentation risk.</td>
+        <td>POPIA compliance achieved by same architecture as GDPR. Engage the Department of Transport and RTMC (Road Traffic Management Corporation) to position ShieldVIN as a solution to SA's documented vehicle crime problem — the government motivation to cooperate is high. SA insurance industry (concentrated market — 3 major insurers hold 70%+ of motor book) are natural pilot partners given claims exposure.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="card" style="margin-top:1.5rem;border-left:3px solid var(--cyan-main);">
+    <h4>Regulatory Strategy Summary</h4>
+    <p>The sequencing is: pilot in the UK first (single regulator, single registry, motivated law enforcement, concentrated insurance market), then use the UK pilot data to engage EU and South African regulators, then approach the US market with a model state statute and AAMVA partnership. Entering all four markets simultaneously is not required — and not advisable. One live, clean, audited deployment is worth more than four simultaneous engagements.</p>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────────────── -->
+<!-- 12 — FINANCIAL OVERVIEW -->
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="financial">
+  <div class="section-label">12 — Financial Overview</div>
+  <h2>Market Size &amp; Revenue Potential</h2>
+
+  <div class="grid-3" style="margin-bottom:2rem;">
+    <div class="card">
+      <h4>Total Addressable Market</h4>
+      <div class="stat-num" style="font-size:2rem;color:var(--cyan-main);margin:0.5rem 0;">~$84B</div>
+      <p style="margin:0;font-size:0.875rem;">Global new vehicle production value of annual identity provisioning (80M+ vehicles × estimated system value per vehicle)</p>
+    </div>
+    <div class="card">
+      <h4>Serviceable Market (Year 5)</h4>
+      <div class="stat-num" style="font-size:2rem;color:var(--purple-light);margin:0.5rem 0;">~$2.4B</div>
+      <p style="margin:0;font-size:0.875rem;">Assuming 12% of new vehicle production enrolled by Year 5, at blended revenue per vehicle of ~$25 including minting + lifecycle queries</p>
+    </div>
+    <div class="card">
+      <h4>Insurance Premium Savings</h4>
+      <div class="stat-num" style="font-size:2rem;color:var(--success);margin:0.5rem 0;">~$1.2B</div>
+      <p style="margin:0;font-size:0.875rem;">Estimated annual insurance claim savings in enrolled markets by Year 5, which would be shared partly as revenue with the system operator</p>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-title">Revenue Projection by Stream — Years 1–5 (USD Millions)</div>
+    <canvas id="chartRevenue" height="260"></canvas>
+    <table class="print-only" style="display:none;margin-top:0.5rem;width:100%;border-collapse:collapse;font-size:9pt;">
+      <thead><tr><th style="text-align:left;padding:4px 8px;background:#040d1e;color:white;">Revenue Stream</th><th style="padding:4px 8px;background:#040d1e;color:white;">Y1 2026</th><th style="padding:4px 8px;background:#040d1e;color:white;">Y2 2027</th><th style="padding:4px 8px;background:#040d1e;color:white;">Y3 2028</th><th style="padding:4px 8px;background:#040d1e;color:white;">Y4 2029</th><th style="padding:4px 8px;background:#040d1e;color:white;">Y5 2030</th></tr></thead>
+      <tbody>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;">Vehicle Minting Fees</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$0.10M</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$0.80M</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$4.20M</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$18.50M</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$58.00M</td></tr>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;">Verification API Access</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$0.05M</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$0.30M</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$1.80M</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$9.20M</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$31.00M</td></tr>
+        <tr><td style="padding:3px 8px;border:1px solid #ccc;">Insurance &amp; Enterprise</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">—</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$0.10M</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$0.90M</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$5.40M</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$19.00M</td></tr>
+        <tr style="font-weight:bold;"><td style="padding:3px 8px;border:1px solid #ccc;">Total Revenue</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$0.15M</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$1.20M</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$6.90M</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$33.10M</td><td style="padding:3px 8px;border:1px solid #ccc;text-align:center;">$108.00M</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="highlight-box" style="margin-top:2rem;">
+    <p><strong style="color:var(--purple-light)">Investment required (Phases 1–2):</strong> An estimated $12–$18M covers the technical build, standards body establishment, regulatory engagement, and the first pilot programme. This is well within the range of a Midnight Network ecosystem development grant combined with strategic investment from one or two founding manufacturer partners and an insurance company.</p>
+  </div>
+
+  <div class="highlight-box" style="margin-top:1rem;border-color:rgba(0,212,255,0.2);">
+    <p><strong style="color:var(--cyan-main)">Operating cost note — DUST:</strong> Every on-chain operation (vehicle mint, ownership transfer, verification query) consumes DUST as the Midnight Network transaction fee. At scale, this is a material operating cost that is not reflected in the revenue table above. DUST cost modelling is included in the Excel financial model's Scenarios tab. Revenue figures shown are gross; net margins will depend on DUST price and transaction volume at each phase.</p>
+  </div>
+</section>
+
+
+
+
+<!-- ────────────────────────────────────────────────────────── -->
+<!-- 13 — TEAM & ADVISORY -->
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="team">
+  <div class="section-label">13 — Team &amp; Advisory</div>
+  <h2>Building the Right Team</h2>
+
+  <p class="lead">ShieldVIN requires expertise at the intersection of automotive hardware engineering, zero-knowledge cryptography, standards governance, and enterprise sales. The founding team is being assembled around this proposal.</p>
+
+  <div class="grid-3" style="margin:2rem 0;">
+    <div class="card">
+      <h4>Technical Lead</h4>
+      <p style="color:var(--text-muted);font-size:0.8rem;margin:0.25rem 0 0.75rem;font-style:italic;">Role open — seeking candidate</p>
+      <p>ZK circuit design experience on the Midnight/Cardano stack. Background in automotive embedded systems or Secure Element firmware. Ideally with experience at a Tier 1 automotive supplier (Bosch, Continental, Aptiv) or cryptographic hardware vendor.</p>
+    </div>
+    <div class="card">
+      <h4>Standards &amp; Policy Lead</h4>
+      <p style="color:var(--text-muted);font-size:0.8rem;margin:0.25rem 0 0.75rem;font-style:italic;">Role open — seeking candidate</p>
+      <p>Experience navigating ISO, SAE, or UNECE standards processes. Automotive regulatory background. Network into DVLA, NHTSA, or equivalent government agencies in target pilot markets.</p>
+    </div>
+    <div class="card">
+      <h4>Automotive Industry Lead</h4>
+      <p style="color:var(--text-muted);font-size:0.8rem;margin:0.25rem 0 0.75rem;font-style:italic;">Role open — seeking candidate</p>
+      <p>Senior relationships with OEM procurement or technology strategy teams. Understands the production line integration process. Has navigated a new hardware mandate into a vehicle production programme before.</p>
+    </div>
+  </div>
+
+  <h3 style="margin-bottom:1.25rem;">Advisory Roles Sought</h3>
+  <div class="grid-2" style="margin-bottom:2rem;">
+    <div class="card">
+      <h4>Cryptography &amp; ZK Research</h4>
+      <p>Academic or applied researcher with ZK proof system expertise. Validates the technical approach, reviews the Compact circuit design, and advises on the post-quantum migration strategy required by VSE-1.</p>
+    </div>
+    <div class="card">
+      <h4>Insurance Industry</h4>
+      <p>Senior figure from a major insurance group (Lloyd's of London tier). Validates the claims data thesis, opens introductions to actuarial teams, and advises on API pricing and data sharing protocols for insurers.</p>
+    </div>
+    <div class="card">
+      <h4>Law Enforcement / Government</h4>
+      <p>Retired senior officer from a national police vehicle crime unit or equivalent government body. Validates the law enforcement use case and assists with government pilot negotiations and type approval pathways.</p>
+    </div>
+    <div class="card">
+      <h4>Midnight Network / Cardano Ecosystem</h4>
+      <p>Technical representative from Midnight Network or IOG. Ensures ShieldVIN is built on the right abstractions and positioned correctly within the Midnight ecosystem and developer roadmap.</p>
+    </div>
+  </div>
+
+  <div class="highlight-box cyan">
+    <p><strong style="color:var(--cyan-main)">If you are Midnight Network:</strong> We are actively looking for a co-development partnership as the primary next step. The right first move is a technical meeting to assess fit, validate the Compact circuit design approach, and agree on the scope of Midnight's involvement in Phase 1. That conversation shapes who the right technical lead is for this project.</p>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────────────── -->
+<!-- 14 — PROPOSAL TO MIDNIGHT -->
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="proposal">
+  <div class="section-label">14 — Proposal to Midnight Network</div>
+  <h2>Why This Project Belongs on Midnight</h2>
+
+  <p class="lead">This is a proposal to open formal discussions with the Midnight Network team about co-developing and co-sponsoring this vehicle identity system as a flagship enterprise use case.</p>
+
+  <div class="grid-2" style="margin:2rem 0;">
+    <div class="card">
+      <h4>What we are asking from Midnight</h4>
+      <p>Dedicated technical partnership and SDK support for vehicle identity smart contract development. Co-development of the ZK proof circuit optimised for SE hardware — targeting under 30 seconds for live proofs at Phase 2, with a long-term target of under 10 seconds as SE hardware matures and subject to Midnight's proof system roadmap. Participation in the governance consortium as a founding member. Joint go-to-market with Midnight's enterprise and government relations teams. Consideration of an ecosystem development grant for Phase 1 and Phase 2 funding.</p>
+    </div>
+    <div class="card">
+      <h4>What Midnight gets in return</h4>
+      <p>A live, regulated, globally-visible use case that validates the "rational privacy" positioning at scale. Tens of millions of DUST transactions per year at full deployment. A reference implementation that other industries (healthcare, finance, supply chain) will study and replicate. Relationships with major automotive manufacturers — one of the world's largest industries. Proof that ZK proofs work at real-world speed and scale.</p>
+    </div>
+  </div>
+
+  <div class="highlight-box cyan">
+    <p><strong style="color:var(--cyan-main)">The core alignment:</strong> Midnight Network was built to solve exactly this kind of problem — where you need to prove something is true without exposing private data, where multiple parties with different access levels need to interact with the same underlying record, and where the consequences of data exposure or record tampering are severe. Vehicle identity is not a niche use case. It touches every person who owns a car. It is regulated globally. It involves billions of dollars. It is exactly the right problem for Midnight to solve first.</p>
+  </div>
+
+  <div style="text-align:center;margin-top:3rem;padding:3rem 2rem;background:var(--bg-card);border:1px solid var(--border-main);border-radius:16px;">
+    <div style="font-family:var(--font-heading);font-size:1.5rem;font-weight:700;margin-bottom:1rem;">Ready to Open the Conversation</div>
+    <p style="color:var(--text-secondary);max-width:540px;margin:0 auto 2rem;">This document is an opening proposal. The technical detail, business model, and framework proposed here are starting points for discussion — not final specifications. We welcome Midnight's input on architecture, positioning, and partnership structure.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <div style="padding:10px 24px;background:var(--gradient-purple);border-radius:8px;font-weight:600;font-size:0.9rem;">Request a Technical Meeting</div>
+      <div style="padding:10px 24px;border:1px solid var(--border-main);border-radius:8px;font-weight:600;font-size:0.9rem;color:var(--text-secondary);">Review Midnight Documentation</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ────────────────────────────────────────────────────────── -->
+<!-- 15 — GLOSSARY -->
+<!-- ────────────────────────────────────────────────────────── -->
+<section id="glossary">
+  <div class="section-label">15 — Glossary</div>
+  <h2>Technical Terms</h2>
+  <p class="lead">Plain-English definitions for technical terminology used throughout this document.</p>
+
+  <div style="display:grid;gap:1px;background:var(--border-main);border:1px solid var(--border-main);border-radius:12px;overflow:hidden;margin-top:2rem;">
+
+    <div style="display:grid;grid-template-columns:210px 1fr;background:var(--bg-card);">
+      <div style="padding:12px 16px;font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan-main);font-weight:500;border-right:1px solid var(--border-main);">Secure Element (SE)</div>
+      <div style="padding:12px 16px;font-size:0.875rem;color:var(--text-secondary);">A tamper-resistant microprocessor chip that stores cryptographic keys and performs security operations in hardware isolation. Keys inside an SE cannot be extracted even if the surrounding device is physically disassembled. Used in SIM cards, passports, payment chips, and — in ShieldVIN — vehicle identity nodes.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:210px 1fr;background:var(--bg-page);">
+      <div style="padding:12px 16px;font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan-main);font-weight:500;border-right:1px solid var(--border-main);">Zero-Knowledge Proof (ZK)</div>
+      <div style="padding:12px 16px;font-size:0.875rem;color:var(--text-secondary);">A cryptographic technique that lets one party prove a statement is true to another party without revealing any information beyond the truth of the statement itself. Example: proving a vehicle is not stolen without revealing who owns it, where it has been, or any other private data.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:210px 1fr;background:var(--bg-card);">
+      <div style="padding:12px 16px;font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan-main);font-weight:500;border-right:1px solid var(--border-main);">Compact</div>
+      <div style="padding:12px 16px;font-size:0.875rem;color:var(--text-secondary);">The smart contract programming language developed by Midnight Network. Compact is designed specifically for writing ZK-native contracts — programs where privacy guarantees are enforced at the language level, not added as an afterthought. ShieldVIN's identity contract is written in Compact.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:210px 1fr;background:var(--bg-page);">
+      <div style="padding:12px 16px;font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan-main);font-weight:500;border-right:1px solid var(--border-main);">DUST</div>
+      <div style="padding:12px 16px;font-size:0.875rem;color:var(--text-secondary);">The transaction fee token on Midnight Network. Every on-chain operation — including ShieldVIN identity proof submissions — consumes a small amount of DUST. DUST is an operational cost for ShieldVIN, not a revenue stream. Revenue comes from manufacturer minting fees and API access.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:210px 1fr;background:var(--bg-card);">
+      <div style="padding:12px 16px;font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan-main);font-weight:500;border-right:1px solid var(--border-main);">VIN</div>
+      <div style="padding:12px 16px;font-size:0.875rem;color:var(--text-secondary);">Vehicle Identification Number. A 17-character code assigned to every motor vehicle at manufacture, used globally by insurers, law enforcement, and registries. Currently just a stamped metal plate — physically easy to replicate, which is the core vulnerability ShieldVIN addresses.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:210px 1fr;background:var(--bg-page);">
+      <div style="padding:12px 16px;font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan-main);font-weight:500;border-right:1px solid var(--border-main);">VIT (Vehicle Identity Token)</div>
+      <div style="padding:12px 16px;font-size:0.875rem;color:var(--text-secondary);">The on-chain token minted at manufacture that represents a vehicle's cryptographic identity on Midnight Network. Contains no personal data — only a binding commitment to the three hardware node keys, the VIN, and the minting event. Defined by the VIT-1 standard.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:210px 1fr;background:var(--bg-card);">
+      <div style="padding:12px 16px;font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan-main);font-weight:500;border-right:1px solid var(--border-main);">VSE-1</div>
+      <div style="padding:12px 16px;font-size:0.875rem;color:var(--text-secondary);">Vehicle Secure Element Standard. The proposed hardware specification for the three SE chips embedded in ShieldVIN-enrolled vehicles. Defines tamper response behaviour, key management, inter-node communication encryption, and firmware update protocols including post-quantum crypto-agility.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:210px 1fr;background:var(--bg-page);">
+      <div style="padding:12px 16px;font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan-main);font-weight:500;border-right:1px solid var(--border-main);">VIT-1</div>
+      <div style="padding:12px 16px;font-size:0.875rem;color:var(--text-secondary);">Vehicle Identity Token Standard. Defines the data structure, minting procedure, and lifecycle events (transfer, recall, flag, expire) for the on-chain VIT token. Ensures any system reading a ShieldVIN token knows exactly what fields to expect regardless of which manufacturer minted it.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:210px 1fr;background:var(--bg-card);">
+      <div style="padding:12px 16px;font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan-main);font-weight:500;border-right:1px solid var(--border-main);">VAP-1</div>
+      <div style="padding:12px 16px;font-size:0.875rem;color:var(--text-secondary);">Verification API and Protocol Standard. Defines the HTTP API that police, insurers, dealers and other authorised parties use to query vehicle identity. Specifies authentication, role-based access control, rate limiting, offline certificate caching, and the JSON request/response formats.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:210px 1fr;background:var(--bg-page);">
+      <div style="padding:12px 16px;font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan-main);font-weight:500;border-right:1px solid var(--border-main);">VGM-1</div>
+      <div style="padding:12px 16px;font-size:0.875rem;color:var(--text-secondary);">Vehicle Governance Model. A W3C-style multi-stakeholder consortium that owns and evolves the ShieldVIN standards. Founding members include Midnight Network, participating manufacturers, a major insurer, and a government representative. No single party controls the standard.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:210px 1fr;background:var(--bg-card);">
+      <div style="padding:12px 16px;font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan-main);font-weight:500;border-right:1px solid var(--border-main);">CAN Bus</div>
+      <div style="padding:12px 16px;font-size:0.875rem;color:var(--text-secondary);">Controller Area Network. The internal communication protocol used by most modern vehicles to allow electronic components to communicate without a central host. ShieldVIN's three hardware nodes communicate over an encrypted and authenticated CAN bus channel.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:210px 1fr;background:var(--bg-page);">
+      <div style="padding:12px 16px;font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan-main);font-weight:500;border-right:1px solid var(--border-main);">ECU</div>
+      <div style="padding:12px 16px;font-size:0.875rem;color:var(--text-secondary);">Engine Control Unit. The embedded computer that manages the engine's operation. In ShieldVIN, the EN-1 Secure Element node is embedded into the ECU housing in the engine bay — one of the three hardware positions that must co-sign every identity proof.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:210px 1fr;background:var(--bg-card);">
+      <div style="padding:12px 16px;font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan-main);font-weight:500;border-right:1px solid var(--border-main);">OEM</div>
+      <div style="padding:12px 16px;font-size:0.875rem;color:var(--text-secondary);">Original Equipment Manufacturer. In the automotive context, the vehicle manufacturer — Toyota, BYD, Ford, etc. ShieldVIN targets OEMs as the primary integration point because SE chip installation must happen at the point of manufacture, not after the vehicle leaves the factory.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:210px 1fr;background:var(--bg-page);">
+      <div style="padding:12px 16px;font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan-main);font-weight:500;border-right:1px solid var(--border-main);">ECC</div>
+      <div style="padding:12px 16px;font-size:0.875rem;color:var(--text-secondary);">Elliptic Curve Cryptography. The public-key cryptography system used by ShieldVIN's SE nodes to generate and hold key shards. Provides strong security with small key sizes — important for resource-constrained chip hardware. VSE-1 requires crypto-agility to migrate to post-quantum algorithms when standardised.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:210px 1fr;background:var(--bg-card);">
+      <div style="padding:12px 16px;font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan-main);font-weight:500;border-right:1px solid var(--border-main);">NMVTIS</div>
+      <div style="padding:12px 16px;font-size:0.875rem;color:var(--text-secondary);">National Motor Vehicle Title Information System. The US federal database used by states, insurers, and dealers to track vehicle title histories, salvage records, and theft reports. Represents current best-in-class for vehicle identity — but reactive (relies on timely reporting) and cannot detect VIN cloning.</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:210px 1fr;background:var(--bg-page);border-radius:0 0 12px 12px;">
+      <div style="padding:12px 16px;font-family:var(--font-mono);font-size:0.8rem;color:var(--cyan-main);font-weight:500;border-right:1px solid var(--border-main);">VIN Cloning</div>
+      <div style="padding:12px 16px;font-size:0.875rem;color:var(--text-secondary);">The primary fraud technique ShieldVIN is designed to prevent. A criminal steals a vehicle, finds a legitimate vehicle of the same make, model, and colour, copies its VIN plate, stamps the stolen vehicle with the copied VIN, and forges matching documents. The stolen vehicle then passes most checks as legitimate.</div>
+    </div>
+
+  </div>
+</section>
+
+</div><!-- end page-wrapper -->
+</main>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <div class="page-wrapper">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">ShieldVIN × Midnight Network</div>
+        <p class="footer-tagline">A proposal for cryptographic vehicle identity that makes VIN fraud permanently impossible. Built on Midnight Network's zero-knowledge proof infrastructure. Designed for new vehicle production from the point of manufacture.</p>
+        <p class="footer-tagline" style="margin-top:0.75rem;font-size:0.78rem;">This is a concept proposal document. All financial projections are estimates based on publicly available market data. Technical specifications are proposed standards subject to industry review and development.</p>
+      </div>
+      <div>
+        <div class="footer-col-title">Document</div>
+        <ul class="footer-links">
+          <li><a href="#problem">The Problem</a></li>
+          <li><a href="#solution">The Solution</a></li>
+          <li><a href="#hardware">Hardware Safes</a></li>
+          <li><a href="#stakeholders">Stakeholders</a></li>
+          <li><a href="#framework">Framework</a></li>
+          <li><a href="#risks">Risk Analysis</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Technology</div>
+        <ul class="footer-links">
+          <li><a href="https://midnight.network" target="_blank">Midnight Network</a></li>
+          <li><a href="https://docs.midnight.network" target="_blank">Midnight Docs</a></li>
+          <li><a href="https://cardano.org" target="_blank">Cardano Ecosystem</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 ShieldVIN Concept Proposal — Open for Discussion</span>
+      <span>Built for Midnight Network | Version 1.0</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ─── TAB SWITCHING ───
+function showStakeholder(id) {
+  document.querySelectorAll('.stakeholder-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ─── CHART CONFIG ───
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: true,
+  plugins: {
+    legend: {
+      labels: { color: '#94a3c0', font: { family: 'IBM Plex Sans', size: 12 }, boxWidth: 12 }
+    }
+  },
+  scales: {
+    x: { ticks: { color: '#5a6a8a', font: { family: 'IBM Plex Sans', size: 11 } }, grid: { color: 'rgba(109,53,232,0.08)' } },
+    y: { ticks: { color: '#5a6a8a', font: { family: 'IBM Plex Sans', size: 11 } }, grid: { color: 'rgba(109,53,232,0.08)' } }
+  }
+};
+
+// Chart 1: Theft losses by region
+const theftTotal = 21.8; // sum of all values
+new Chart(document.getElementById('chartTheft'), {
+  type: 'bar',
+  data: {
+    labels: ['United States', 'Europe (EU)', 'South Africa', 'Latin America', 'UK', 'Australia', 'Middle East & Africa'],
+    datasets: [{
+      label: 'Estimated Annual Theft Losses (USD Billions)',
+      data: [7.4, 4.2, 2.8, 3.6, 1.1, 0.8, 1.9],
+      backgroundColor: ['rgba(109,53,232,0.7)','rgba(109,53,232,0.5)','rgba(0,212,255,0.5)','rgba(109,53,232,0.45)','rgba(0,212,255,0.4)','rgba(109,53,232,0.4)','rgba(0,212,255,0.35)'],
+      borderColor: ['rgba(109,53,232,1)','rgba(109,53,232,0.8)','rgba(0,212,255,0.8)','rgba(109,53,232,0.8)','rgba(0,212,255,0.7)','rgba(109,53,232,0.7)','rgba(0,212,255,0.6)'],
+      borderWidth: 1,
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    ...chartDefaults,
+    plugins: {
+      ...chartDefaults.plugins,
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0].label,
+          label: (ctx) => {
+            const val = ctx.parsed.y;
+            const pct = ((val / theftTotal) * 100).toFixed(1);
+            return [
+              ` Annual losses: $${val}B USD`,
+              ` Share of global total: ${pct}%`,
+            ];
+          },
+          afterLabel: (ctx) => {
+            const notes = {
+              'United States': 'Source: NICB, 2024. Includes VIN fraud & title washing.',
+              'Europe (EU)': 'Source: EUCARIS / Interpol cross-border vehicle crime data.',
+              'South Africa': 'Source: SAPS Vehicle Crime Stats 2023/24.',
+              'Latin America': 'Source: IDB regional vehicle theft estimates 2024.',
+              'UK': 'Source: DVLA / ONS vehicle crime statistics 2023.',
+              'Australia': 'Source: NMVTRC National Motor Vehicle Theft Report 2024.',
+              'Middle East & Africa': 'Source: Interpol regional estimates 2024.',
+            };
+            return ` ${notes[ctx.label] || ''}`;
+          }
+        }
+      }
+    }
+  }
+});
+
+// Chart 2: Benefit by sector
+new Chart(document.getElementById('chartBenefit'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Insurance Claim Savings', 'Law Enforcement Efficiency', 'Consumer Loss Prevention', 'Manufacturer Brand Value', 'Finance Fraud Reduction', 'Government Admin Savings'],
+    datasets: [{
+      data: [42, 18, 20, 8, 7, 5],
+      backgroundColor: [
+        'rgba(109,53,232,0.75)','rgba(0,212,255,0.6)','rgba(155,112,240,0.65)',
+        'rgba(0,150,180,0.55)','rgba(34,197,94,0.55)','rgba(245,158,11,0.55)'
+      ],
+      borderColor: 'rgba(4,13,30,0.8)',
+      borderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: {
+        position: 'right',
+        labels: { color: '#94a3c0', font: { family: 'IBM Plex Sans', size: 11 }, boxWidth: 12, padding: 14 }
+      },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => ` ${ctx.label}: ${ctx.parsed}% of total benefit`
+        }
+      }
+    }
+  }
+});
+
+// Chart 3: Vehicle enrollment growth
+const fmt = (v) => v >= 1000000 ? (v/1000000).toFixed(2) + 'M' : v >= 1000 ? (v/1000).toFixed(0) + 'K' : v.toString();
+const phaseContext = {
+  'Q4 2026': 'Phase 1 — Testnet proof-of-concept',
+  'Q2 2027': 'Phase 1 → Phase 2 transition',
+  'Q4 2027': 'Phase 2 — UK pilot live',
+  'Q2 2028': 'Phase 2 — Pilot scaling',
+  'Q4 2028': 'Phase 2 → Phase 3 transition',
+  'Q2 2029': 'Phase 3 — Multi-manufacturer rollout',
+  'Q4 2029': 'Phase 3 — 3+ jurisdictions active',
+  'Q2 2030': 'Phase 3 — Commercial API at scale',
+  'Q4 2030': 'Phase 3 target — 500k+ vehicles',
+};
+new Chart(document.getElementById('chartGrowth'), {
+  type: 'line',
+  data: {
+    labels: ['Q4 2026', 'Q2 2027', 'Q4 2027', 'Q2 2028', 'Q4 2028', 'Q2 2029', 'Q4 2029', 'Q2 2030', 'Q4 2030'],
+    datasets: [{
+      label: 'Vehicles Enrolled (Cumulative)',
+      data: [0, 500, 5000, 22000, 80000, 250000, 600000, 1200000, 2500000],
+      borderColor: 'rgba(109,53,232,0.9)',
+      backgroundColor: 'rgba(109,53,232,0.1)',
+      fill: true,
+      tension: 0.4,
+      pointBackgroundColor: 'rgba(109,53,232,1)',
+      pointBorderColor: '#040d1e',
+      pointRadius: 5,
+    },{
+      label: 'Target (Ambitious)',
+      data: [0, 1000, 8000, 40000, 180000, 550000, 1400000, 3000000, 5500000],
+      borderColor: 'rgba(0,212,255,0.5)',
+      backgroundColor: 'transparent',
+      borderDash: [6,4],
+      tension: 0.4,
+      pointRadius: 3,
+      pointBackgroundColor: 'rgba(0,212,255,0.8)',
+    }]
+  },
+  options: {
+    ...chartDefaults,
+    plugins: {
+      ...chartDefaults.plugins,
+      tooltip: {
+        callbacks: {
+          title: (items) => `${items[0].label}  —  ${phaseContext[items[0].label] || ''}`,
+          label: (ctx) => {
+            const v = ctx.parsed.y;
+            const globalNewPerYear = 80000000;
+            const pct = ((v / globalNewPerYear) * 100).toFixed(3);
+            return [
+              ` ${ctx.dataset.label}: ${fmt(v)} vehicles`,
+              ` Global new-vehicle share: ${pct}%`,
+            ];
+          }
+        }
+      }
+    },
+    scales: {
+      x: { ticks: { color: '#5a6a8a', font: { family: 'IBM Plex Sans', size: 11 } }, grid: { color: 'rgba(109,53,232,0.06)' } },
+      y: {
+        ticks: {
+          color: '#5a6a8a',
+          font: { family: 'IBM Plex Sans', size: 11 },
+          callback: (v) => fmt(v)
+        },
+        grid: { color: 'rgba(109,53,232,0.06)' }
+      }
+    }
+  }
+});
+
+// Chart 4: Revenue projection
+const revTotals = [0.15, 1.20, 6.90, 33.10, 108.00];
+const revYoY = ['—', '+700%', '+475%', '+380%', '+226%'];
+new Chart(document.getElementById('chartRevenue'), {
+  type: 'bar',
+  data: {
+    labels: ['Year 1\n2026', 'Year 2\n2027', 'Year 3\n2028', 'Year 4\n2029', 'Year 5\n2030'],
+    datasets: [
+      {
+        label: 'Vehicle Minting Fees',
+        data: [0.1, 0.8, 4.2, 18.5, 58],
+        backgroundColor: 'rgba(109,53,232,0.75)',
+        borderRadius: 4,
+        stack: 'revenue',
+      },
+      {
+        label: 'Verification API',
+        data: [0.05, 0.3, 1.8, 9.2, 31],
+        backgroundColor: 'rgba(0,212,255,0.6)',
+        borderRadius: 4,
+        stack: 'revenue',
+      },
+      {
+        label: 'Insurance & Enterprise',
+        data: [0, 0.1, 0.9, 5.4, 19],
+        backgroundColor: 'rgba(34,197,94,0.55)',
+        borderRadius: 4,
+        stack: 'revenue',
+      }
+    ]
+  },
+  options: {
+    ...chartDefaults,
+    plugins: {
+      ...chartDefaults.plugins,
+      tooltip: {
+        callbacks: {
+          title: (items) => {
+            const i = items[0].dataIndex;
+            return `${items[0].label.replace('\n',' ')}  —  Total: $${revTotals[i]}M  (YoY ${revYoY[i]})`;
+          },
+          label: (ctx) => {
+            const v = ctx.parsed.y;
+            const total = revTotals[ctx.dataIndex];
+            const share = total > 0 ? ((v / total) * 100).toFixed(1) : '0.0';
+            return ` ${ctx.dataset.label}: $${v.toFixed(2)}M  (${share}% of year total)`;
+          },
+          afterBody: (items) => {
+            const i = items[0].dataIndex;
+            const notes = [
+              'Phase 1 — Proof of concept. Revenue from testnet pilot minting only.',
+              'Phase 2 begin — Limited pilot vehicles + early API access.',
+              'Phase 2 → 3 — Pilot scaling. Multiple manufacturers onboarding.',
+              'Phase 3 — Multi-manufacturer rollout. 3+ jurisdictions live.',
+              'Phase 3 target — $108M total. Commercially self-sustaining.',
+            ];
+            return [``, ` Context: ${notes[i]}`];
+          }
+        }
+      }
+    },
+    scales: {
+      x: { ticks: { color: '#5a6a8a', font: { family: 'IBM Plex Sans', size: 11 } }, grid: { color: 'rgba(109,53,232,0.06)' }, stacked: true },
+      y: {
+        ticks: { color: '#5a6a8a', font: { family: 'IBM Plex Sans', size: 11 }, callback: (v) => '$' + v + 'M' },
+        grid: { color: 'rgba(109,53,232,0.06)' },
+        stacked: true
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

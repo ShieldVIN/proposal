@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShieldVIN — Interactive Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #040d1e;
+    --card:     #0b1629;
+    --card2:    #111e35;
+    --card3:    #0d1a2e;
+    --purple:   #6d35e8;
+    --purple-l: #9b70f0;
+    --cyan:     #00d4ff;
+    --green:    #10b981;
+    --amber:    #f59e0b;
+    --red:      #ef4444;
+    --text:     #eef2ff;
+    --text-s:   #94a3c0;
+    --text-m:   #5a6a8a;
+    --border:   rgba(109,53,232,0.25);
+    --border-c: rgba(0,212,255,0.2);
+    --glow-p:   rgba(109,53,232,0.12);
+    --glow-c:   rgba(0,212,255,0.08);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+    position: sticky;
+    top: 0;
+    z-index: 200;
+  }
+  .logo {
+    font-family: 'Exo 2', sans-serif;
+    font-weight: 800;
+    font-size: 1.35rem;
+    letter-spacing: 0.02em;
+  }
+  .logo span { color: var(--cyan); }
+  .demo-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--amber);
+    border: 1px solid rgba(245,158,11,0.35);
+    border-radius: 4px;
+    padding: 3px 10px;
+    letter-spacing: 0.1em;
+  }
+  .nav-links {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+  .nav-links a {
+    color: var(--text-s);
+    text-decoration: none;
+    font-size: 0.82rem;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--cyan); }
+
+  /* ── PAGE ── */
+  .page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+  }
+
+  /* ── INTRO ── */
+  .intro {
+    text-align: center;
+    padding: 40px 0 32px;
+  }
+  .intro-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--amber);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .intro h1 {
+    font-family: 'Exo 2', sans-serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 800;
+    margin-bottom: 12px;
+  }
+  .intro p {
+    color: var(--text-s);
+    font-size: 0.95rem;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  /* ── ROLE SELECTOR ── */
+  .role-selector {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 28px 0 32px;
+  }
+  .role-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    color: var(--text-s);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .role-btn .icon { font-size: 1.1rem; }
+  .role-btn:hover { border-color: var(--purple-l); color: var(--text); }
+  .role-btn.active {
+    background: var(--glow-p);
+    border-color: var(--purple);
+    color: var(--text);
+    box-shadow: 0 0 20px rgba(109,53,232,0.2);
+  }
+  .role-btn.active-cyan {
+    background: var(--glow-c);
+    border-color: var(--cyan);
+    color: var(--text);
+    box-shadow: 0 0 20px rgba(0,212,255,0.15);
+  }
+
+  /* ── DEMO LAYOUT ── */
+  .demo-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 720px) { .demo-layout { grid-template-columns: 1fr; } }
+
+  /* ── SIMULATION PANEL ── */
+  .sim-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .sim-header {
+    padding: 14px 18px;
+    background: var(--card2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sim-title {
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+  .sim-status {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    padding: 3px 10px;
+    border-radius: 3px;
+    letter-spacing: 0.06em;
+  }
+  .sim-status.idle { background: rgba(90,106,138,0.2); color: var(--text-m); border: 1px solid rgba(90,106,138,0.3); }
+  .sim-status.running { background: rgba(245,158,11,0.1); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+  .sim-status.done { background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+
+  /* ── VEHICLE VISUAL ── */
+  .vehicle-visual {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .vv-vin {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .vv-vin-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-m);
+    letter-spacing: 0.08em;
+  }
+  .vv-vin-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--cyan);
+    background: var(--glow-c);
+    border: 1px solid var(--border-c);
+    border-radius: 4px;
+    padding: 3px 10px;
+  }
+
+  /* Chip status indicators */
+  .chip-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .chip-indicator {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--card2);
+    text-align: center;
+    transition: all 0.4s;
+  }
+  .chip-indicator.signing {
+    border-color: var(--amber);
+    background: rgba(245,158,11,0.06);
+    box-shadow: 0 0 12px rgba(245,158,11,0.15);
+  }
+  .chip-indicator.signed {
+    border-color: var(--green);
+    background: rgba(16,185,129,0.06);
+    box-shadow: 0 0 12px rgba(16,185,129,0.12);
+  }
+  .chip-indicator.failed {
+    border-color: var(--red);
+    background: rgba(239,68,68,0.06);
+  }
+  .chip-ind-id {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-m);
+    letter-spacing: 0.1em;
+    margin-bottom: 3px;
+  }
+  .chip-ind-name {
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .chip-ind-state {
+    font-size: 0.7rem;
+    color: var(--text-m);
+    margin-top: 3px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .chip-indicator.signing .chip-ind-state { color: var(--amber); }
+  .chip-indicator.signed .chip-ind-state { color: var(--green); }
+
+  /* ── TERMINAL ── */
+  .terminal {
+    background: #020810;
+    border-radius: 0 0 10px 10px;
+    padding: 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1.7;
+    min-height: 180px;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .term-line { display: flex; gap: 8px; align-items: flex-start; }
+  .term-t { color: var(--text-m); white-space: nowrap; }
+  .term-prompt { color: var(--purple-l); }
+  .term-msg { color: #c8d8f0; }
+  .term-msg.ok { color: var(--green); }
+  .term-msg.warn { color: var(--amber); }
+  .term-msg.err { color: var(--red); }
+  .term-msg.info { color: var(--cyan); }
+  .term-msg.dim { color: var(--text-m); }
+  .cursor {
+    display: inline-block;
+    width: 6px;
+    height: 1em;
+    background: var(--cyan);
+    vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* ── RESULT PANEL ── */
+  .result-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .result-header {
+    padding: 14px 18px;
+    background: var(--card2);
+    border-bottom: 1px solid var(--border);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  /* Role info bar */
+  .role-info {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .role-icon-big { font-size: 1.8rem; }
+  .role-name {
+    font-family: 'Exo 2', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 2px;
+  }
+  .role-desc { font-size: 0.77rem; color: var(--text-s); }
+
+  /* Proof badge */
+  .proof-badge {
+    margin: 16px 18px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    background: var(--glow-p);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.5s, transform 0.5s;
+  }
+  .proof-badge.visible { opacity: 1; transform: translateY(0); }
+  .proof-badge.valid { border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.06); }
+  .proof-badge.invalid { border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.06); }
+  .pb-icon { font-size: 1.5rem; }
+  .pb-label {
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+  }
+  .pb-label.valid { color: var(--green); }
+  .pb-label.invalid { color: var(--red); }
+  .pb-sub { font-size: 0.73rem; color: var(--text-m); margin-top: 1px; font-family: 'IBM Plex Mono', monospace; }
+
+  /* Field list */
+  .field-list {
+    padding: 0 18px 18px;
+  }
+  .field-group-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-m);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin: 14px 0 8px;
+  }
+  .field-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 12px;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: opacity 0.4s, transform 0.4s, background 0.3s;
+  }
+  .field-item.shown {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    opacity: 1;
+    transform: translateX(0);
+  }
+  .field-item.hidden-field {
+    background: rgba(15,20,35,0.5);
+    border: 1px dashed rgba(90,106,138,0.2);
+    opacity: 1;
+    transform: translateX(0);
+  }
+  .field-key {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-s);
+  }
+  .field-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    max-width: 55%;
+    text-align: right;
+    word-break: break-all;
+  }
+  .field-value.revealed { color: var(--cyan); }
+  .field-value.redacted { color: var(--text-m); letter-spacing: 0.05em; }
+  .field-value.green { color: var(--green); }
+  .field-value.amber { color: var(--amber); }
+  .field-value.red { color: var(--red); }
+
+  /* ── SCENARIO SWITCHER ── */
+  .scenario-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .scenario-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-m);
+    letter-spacing: 0.08em;
+    margin-right: 4px;
+    white-space: nowrap;
+  }
+  .sc-btn {
+    padding: 4px 12px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--text-s);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+  }
+  .sc-btn:hover { border-color: var(--purple-l); color: var(--text); }
+  .sc-btn.active { background: var(--glow-p); border-color: var(--purple); color: var(--purple-l); }
+
+  /* ── RUN BUTTON ── */
+  .run-area {
+    text-align: center;
+    padding: 20px 0 0;
+  }
+  .run-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 32px;
+    border-radius: 8px;
+    background: var(--purple);
+    color: #fff;
+    border: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+    box-shadow: 0 4px 20px rgba(109,53,232,0.35);
+  }
+  .run-btn:hover { background: var(--purple-l); box-shadow: 0 6px 28px rgba(109,53,232,0.5); }
+  .run-btn:active { transform: scale(0.97); }
+  .run-btn:disabled { background: var(--card2); color: var(--text-m); box-shadow: none; cursor: not-allowed; }
+
+  /* ── EXPLANATION BOX ── */
+  .explain-box {
+    margin-top: 24px;
+    padding: 16px;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .explain-title {
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--purple-l);
+  }
+  .explain-text {
+    font-size: 0.8rem;
+    color: var(--text-s);
+    line-height: 1.6;
+  }
+  .explain-text strong { color: var(--text); }
+
+  /* ── ZK NOTE ── */
+  .zk-note {
+    margin-top: 20px;
+    padding: 14px 16px;
+    background: var(--glow-c);
+    border: 1px solid var(--border-c);
+    border-radius: 8px;
+    font-size: 0.78rem;
+    color: var(--text-s);
+    line-height: 1.6;
+  }
+  .zk-note strong { color: var(--cyan); }
+
+  /* ── STEPS BELOW ── */
+  .steps-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-top: 32px;
+  }
+  @media (max-width: 600px) { .steps-row { grid-template-columns: repeat(2, 1fr); } }
+  .step-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+  .step-n {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--purple-l);
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+  .step-icon { font-size: 1.4rem; margin-bottom: 6px; }
+  .step-label {
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .step-desc { font-size: 0.7rem; color: var(--text-m); line-height: 1.4; }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--text-m);
+    margin-top: 40px;
+  }
+  footer strong { color: var(--purple-l); }
+
+  /* Spinner animation */
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .spinning { display: inline-block; animation: spin 1s linear infinite; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Shield<span>VIN</span></div>
+  <div class="demo-label">INTERACTIVE DEMO</div>
+  <nav class="nav-links">
+    <a href="shieldvin-summary.html">Summary →</a>
+    <a href="whitepaper.html">Whitepaper →</a>
+  </nav>
+</header>
+
+<div class="page">
+
+  <div class="intro">
+    <div class="intro-eyebrow">Zero-Knowledge Selective Disclosure</div>
+    <h1>Watch the Proof Happen</h1>
+    <p>Select a stakeholder role and a vehicle scenario, then run the verification. See exactly which fields each role receives — and what stays hidden.</p>
+  </div>
+
+  <!-- Role Selector -->
+  <div class="role-selector" id="roleSelector">
+    <button class="role-btn active" data-role="police" onclick="selectRole('police', this)">
+      <span class="icon">🚔</span> Police
+    </button>
+    <button class="role-btn" data-role="insurer" onclick="selectRole('insurer', this)">
+      <span class="icon">🏢</span> Insurance
+    </button>
+    <button class="role-btn" data-role="dealer" onclick="selectRole('dealer', this)">
+      <span class="icon">🏪</span> Dealer
+    </button>
+    <button class="role-btn" data-role="government" onclick="selectRole('government', this)">
+      <span class="icon">🏛</span> Government
+    </button>
+    <button class="role-btn" data-role="owner" onclick="selectRole('owner', this)">
+      <span class="icon">👤</span> Owner
+    </button>
+  </div>
+
+  <!-- Demo Layout -->
+  <div class="demo-layout">
+
+    <!-- LEFT: Simulation -->
+    <div>
+      <div class="sim-panel">
+        <div class="sim-header">
+          <div class="sim-title">Verification Simulation</div>
+          <div class="sim-status idle" id="simStatus">IDLE</div>
+        </div>
+
+        <!-- Scenario selector -->
+        <div class="scenario-bar">
+          <span class="scenario-label">SCENARIO:</span>
+          <button class="sc-btn active" data-sc="active" onclick="selectScenario('active', this)">Active · Clean</button>
+          <button class="sc-btn" data-sc="stolen" onclick="selectScenario('stolen', this)">Stolen</button>
+          <button class="sc-btn" data-sc="tampered" onclick="selectScenario('tampered', this)">Chip Tampered</button>
+          <button class="sc-btn" data-sc="flagged" onclick="selectScenario('flagged', this)">Recall Flag</button>
+        </div>
+
+        <div class="vehicle-visual">
+          <div class="vv-vin">
+            <span class="vv-vin-label">VIN (public ledger)</span>
+            <span class="vv-vin-value" id="vinDisplay">1HGBH41JXMN109186</span>
+          </div>
+          <div class="chip-row">
+            <div class="chip-indicator" id="chip-en1">
+              <div class="chip-ind-id">EN-1</div>
+              <div class="chip-ind-name">Engine Node</div>
+              <div class="chip-ind-state" id="chip-en1-state">ready</div>
+            </div>
+            <div class="chip-indicator" id="chip-cn2">
+              <div class="chip-ind-id">CN-2</div>
+              <div class="chip-ind-name">Chassis Node</div>
+              <div class="chip-ind-state" id="chip-cn2-state">ready</div>
+            </div>
+            <div class="chip-indicator" id="chip-tn3">
+              <div class="chip-ind-id">TN-3</div>
+              <div class="chip-ind-name">Telematics</div>
+              <div class="chip-ind-state" id="chip-tn3-state">ready</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terminal -->
+        <div class="terminal" id="terminal">
+          <div class="term-line">
+            <span class="term-t">[00:00]</span>
+            <span class="term-prompt">$</span>
+            <span class="term-msg dim">ShieldVIN verification engine ready.</span>
+          </div>
+          <div class="term-line">
+            <span class="term-t">[00:00]</span>
+            <span class="term-prompt">$</span>
+            <span class="term-msg dim">Select a role and scenario, then press Run.</span>
+          </div>
+          <div class="term-line">
+            <span class="term-t"></span>
+            <span class="term-prompt"></span>
+            <span class="term-msg"><span class="cursor"></span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="run-area">
+        <button class="run-btn" id="runBtn" onclick="runVerification()">
+          ▶ Run Verification
+        </button>
+      </div>
+
+      <!-- Step-by-step reference -->
+      <div class="steps-row">
+        <div class="step-item">
+          <div class="step-n">STEP 1</div>
+          <div class="step-icon">🔍</div>
+          <div class="step-label">Query</div>
+          <div class="step-desc">Authority sends request + session nonce via VAP-1</div>
+        </div>
+        <div class="step-item">
+          <div class="step-n">STEP 2</div>
+          <div class="step-icon">🔐</div>
+          <div class="step-label">Co-Sign</div>
+          <div class="step-desc">EN-1, CN-2, TN-3 each sign the nonce in-chip</div>
+        </div>
+        <div class="step-item">
+          <div class="step-n">STEP 3</div>
+          <div class="step-icon">⚙️</div>
+          <div class="step-label">ZK Proof</div>
+          <div class="step-desc">Proof server generates PLONK/KZG proof from witness data</div>
+        </div>
+        <div class="step-item">
+          <div class="step-n">STEP 4</div>
+          <div class="step-icon">🌐</div>
+          <div class="step-label">Validate</div>
+          <div class="step-desc">Midnight Network checks proof against VIT token</div>
+        </div>
+        <div class="step-item">
+          <div class="step-n">STEP 5</div>
+          <div class="step-icon">📤</div>
+          <div class="step-label">Disclose</div>
+          <div class="step-desc">Role-specific fields returned. All others remain private.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Result -->
+    <div>
+      <div class="result-panel">
+        <div class="result-header">Disclosed Fields — <span id="roleHeaderName">Police</span></div>
+
+        <div class="role-info" id="roleInfo">
+          <div class="role-icon-big" id="roleIconBig">🚔</div>
+          <div>
+            <div class="role-name" id="roleNameDisplay">Police / Law Enforcement</div>
+            <div class="role-desc" id="roleDescDisplay">Roadside or border check. Needs stolen status, not owner identity.</div>
+          </div>
+        </div>
+
+        <!-- Proof validity badge -->
+        <div class="proof-badge" id="proofBadge">
+          <div class="pb-icon" id="badgeIcon">🛡</div>
+          <div>
+            <div class="pb-label" id="badgeLabel">—</div>
+            <div class="pb-sub" id="badgeSub">PLONK proof · Midnight Network · VIT-1</div>
+          </div>
+        </div>
+
+        <div class="field-list" id="fieldList">
+          <div class="field-group-label">Awaiting verification...</div>
+        </div>
+      </div>
+
+      <!-- What the ZK proof hides -->
+      <div class="zk-note" id="zkNote">
+        <strong>What the ZK proof protects:</strong> The private witness data — the three Ed25519 signatures, the actual signing keys, and any private vehicle data — is never submitted to Midnight Network. Only the proof of correct computation is on-chain. The requester cannot reconstruct the witness even if they intercept the proof.
+      </div>
+
+      <!-- Role explanation -->
+      <div class="explain-box" id="explainBox">
+        <div class="explain-title" id="explainTitle">Police Query Explained</div>
+        <div class="explain-text" id="explainText">
+          A police officer at a roadside stop needs to know one thing: is this vehicle stolen? They do <strong>not</strong> need the owner's identity or purchase history — and ShieldVIN structurally prevents over-disclosure. Even if the status is <em>Active</em>, the VIN is not disclosed. Only when status is <em>Stolen</em> does the circuit disclose the VIN — to help identify the legitimate vehicle.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <strong>ShieldVIN</strong> · Interactive Demo · Midnight Network Concept Proposal · 2026
+</footer>
+
+<script>
+// ── STATE ──
+let currentRole = 'police';
+let currentScenario = 'active';
+let running = false;
+
+// ── VEHICLE DATA ──
+const vehicleData = {
+  active: {
+    status: 'ACTIVE',
+    vin: '1HGBH41JXMN109186',
+    transferCount: 2,
+    serviceCount: 7,
+    mintTimestamp: '2023-04-12T09:14:00Z',
+    buildSpecHash: 'a3f9c2...d18b',
+    en1: 'ok', cn2: 'ok', tn3: 'ok',
+    proofValid: true
+  },
+  stolen: {
+    status: 'STOLEN',
+    vin: '2T1BURHE0JC024831',
+    transferCount: 1,
+    serviceCount: 3,
+    mintTimestamp: '2022-11-01T07:30:00Z',
+    buildSpecHash: 'b72e1a...c90f',
+    en1: 'ok', cn2: 'ok', tn3: 'ok',
+    proofValid: true
+  },
+  tampered: {
+    status: 'ACTIVE',
+    vin: '5YJSA1DN5DFP14705',
+    transferCount: 0,
+    serviceCount: 0,
+    mintTimestamp: '2024-01-05T12:00:00Z',
+    buildSpecHash: '—',
+    en1: 'fail', cn2: 'ok', tn3: 'ok',
+    proofValid: false
+  },
+  flagged: {
+    status: 'FLAGGED',
+    vin: 'WAUZZZ4G5DN012345',
+    transferCount: 3,
+    serviceCount: 12,
+    mintTimestamp: '2021-06-22T10:15:00Z',
+    buildSpecHash: 'e44d7c...f31a',
+    en1: 'ok', cn2: 'ok', tn3: 'ok',
+    proofValid: true
+  }
+};
+
+// ── ROLE CONFIG ──
+const roles = {
+  police: {
+    icon: '🚔', name: 'Police / Law Enforcement',
+    desc: 'Roadside or border check. Needs stolen status, not owner identity.',
+    explainTitle: 'Police Query Explained',
+    explainText: `A police officer at a roadside stop needs to know one thing: is this vehicle stolen? They do <strong>not</strong> need the owner's identity or purchase history — and ShieldVIN structurally prevents over-disclosure. The VIN is only disclosed when the status is <em>Stolen</em>, to help locate the legitimate vehicle.`
+  },
+  insurer: {
+    icon: '🏢', name: 'Insurance Company',
+    desc: 'Policy underwriting or claims. Needs ownership chain depth and service history.',
+    explainTitle: 'Insurer Query Explained',
+    explainText: `An insurer needs to verify the vehicle is genuine and assess risk — not identify the previous owner. ShieldVIN discloses ownership transfer count and service event count. The actual VIN and build specification are withheld. Each insurer sees only what the ZK circuit explicitly discloses for role 1.`
+  },
+  dealer: {
+    icon: '🏪', name: 'Authorised Dealer',
+    desc: 'Pre-sale identity check. Needs history depth and any flags before completing transfer.',
+    explainTitle: 'Dealer Query Explained',
+    explainText: `A dealer completing a used-car sale needs to verify the vehicle is genuine, check how many previous owners it has had, and confirm no recall or stolen flags are active. They receive identity validity, transfer count, service count, and status. Previous owner identities are never disclosed — those individuals have no relationship with the dealer.`
+  },
+  government: {
+    icon: '🏛', name: 'Government / DMV',
+    desc: 'Registration sync and compliance. Needs VIN, transfer chain, and recall status.',
+    explainTitle: 'Government Query Explained',
+    explainText: `A government registration authority needs the VIN to update ownership records, plus the transfer count to verify no gaps in the chain, and the current status for compliance purposes. The owner's personal identity is not on-chain — registration databases handle that separately, keeping GDPR compliance clean.`
+  },
+  owner: {
+    icon: '👤', name: 'Vehicle Owner',
+    desc: 'Owner has full visibility of their own record — build spec, full history, timestamps.',
+    explainTitle: 'Owner Query Explained',
+    explainText: `The registered owner can request the full record for their vehicle — VIN, transfer count, full service history count, original build specification hash, and mint timestamp. The owner secret (stored off-chain) proves ownership without any wallet address appearing on-chain, preserving GDPR compliance by design.`
+  }
+};
+
+// ── SCENARIO LABELS ──
+const scenarioLabels = {
+  active: 'Active · Clean title · All chips present',
+  stolen: 'Stolen · Law enforcement flag active',
+  tampered: 'Chip tampered · EN-1 removed or replaced',
+  flagged: 'Flagged · Manufacturer recall hold'
+};
+
+// ── SELECT ROLE ──
+function selectRole(role, btn) {
+  currentRole = role;
+  document.querySelectorAll('.role-btn').forEach(b => b.className = 'role-btn');
+  btn.className = 'role-btn active';
+  const r = roles[role];
+  document.getElementById('roleHeaderName').textContent = r.name;
+  document.getElementById('roleIconBig').textContent = r.icon;
+  document.getElementById('roleNameDisplay').textContent = r.name;
+  document.getElementById('roleDescDisplay').textContent = r.desc;
+  document.getElementById('explainTitle').textContent = r.explainTitle;
+  document.getElementById('explainText').innerHTML = r.explainText;
+  resetResult();
+}
+
+// ── SELECT SCENARIO ──
+function selectScenario(sc, btn) {
+  currentScenario = sc;
+  document.querySelectorAll('.sc-btn').forEach(b => b.className = 'sc-btn');
+  btn.className = 'sc-btn active';
+  const v = vehicleData[sc];
+  document.getElementById('vinDisplay').textContent = v.vin;
+  resetChips();
+  resetResult();
+}
+
+function resetChips() {
+  ['en1','cn2','tn3'].forEach(id => {
+    const el = document.getElementById('chip-' + id);
+    el.className = 'chip-indicator';
+    document.getElementById('chip-' + id + '-state').textContent = 'ready';
+  });
+}
+
+function resetResult() {
+  document.getElementById('proofBadge').className = 'proof-badge';
+  document.getElementById('fieldList').innerHTML = '<div class="field-group-label">Awaiting verification...</div>';
+  document.getElementById('simStatus').textContent = 'IDLE';
+  document.getElementById('simStatus').className = 'sim-status idle';
+}
+
+// ── TERMINAL ──
+let termLines = [];
+function clearTerminal() {
+  termLines = [];
+  renderTerminal();
+}
+function addLine(msg, type='', t='') {
+  const now = new Date();
+  const ts = t || `${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  termLines.push({ ts, msg, type });
+  renderTerminal();
+}
+function renderTerminal() {
+  const term = document.getElementById('terminal');
+  term.innerHTML = termLines.map(l =>
+    `<div class="term-line">
+      <span class="term-t">[${l.ts}]</span>
+      <span class="term-prompt">$</span>
+      <span class="term-msg ${l.type}">${l.msg}</span>
+    </div>`
+  ).join('') + `<div class="term-line"><span class="term-t"></span><span class="term-prompt"></span><span class="term-msg"><span class="cursor"></span></span></div>`;
+  term.scrollTop = term.scrollHeight;
+}
+
+// ── DELAY HELPER ──
+const delay = ms => new Promise(res => setTimeout(res, ms));
+
+// ── RUN VERIFICATION ──
+async function runVerification() {
+  if (running) return;
+  running = true;
+  document.getElementById('runBtn').disabled = true;
+
+  const v = vehicleData[currentScenario];
+  const role = currentRole;
+
+  clearTerminal();
+  resetResult();
+  resetChips();
+
+  document.getElementById('simStatus').textContent = 'RUNNING';
+  document.getElementById('simStatus').className = 'sim-status running';
+
+  // Step 1: Query
+  addLine(`VAP-1 query received · role=${role.toUpperCase()} · scenario=${currentScenario}`, 'info', '00:00');
+  await delay(600);
+  addLine(`Generating session nonce...`, 'dim', '00:01');
+  await delay(500);
+  addLine(`nonce=7f3a9c2e...d4b1 · sent to TN-3`, '', '00:01');
+  await delay(700);
+
+  // Step 2: Chip signing
+  addLine(`TN-3 forwarding challenge to EN-1, CN-2...`, 'dim', '00:02');
+  await delay(400);
+
+  // EN-1
+  const en1El = document.getElementById('chip-en1');
+  en1El.className = 'chip-indicator signing';
+  document.getElementById('chip-en1-state').textContent = 'signing...';
+  await delay(700);
+
+  if (v.en1 === 'fail') {
+    en1El.className = 'chip-indicator failed';
+    document.getElementById('chip-en1-state').textContent = 'FAIL';
+    addLine(`EN-1 signature FAILED — chip not responding`, 'err', '00:03');
+    await delay(400);
+    addLine(`Proof assembly aborted — 3-of-3 co-signature required`, 'err', '00:03');
+    await finishFailed(v);
+    return;
+  }
+
+  en1El.className = 'chip-indicator signed';
+  document.getElementById('chip-en1-state').textContent = '✓ signed';
+  addLine(`EN-1 signature OK · R=4a2f...c9d1 S=7b8e...2a0f`, 'ok', '00:03');
+  await delay(400);
+
+  // CN-2
+  const cn2El = document.getElementById('chip-cn2');
+  cn2El.className = 'chip-indicator signing';
+  document.getElementById('chip-cn2-state').textContent = 'signing...';
+  await delay(600);
+  cn2El.className = 'chip-indicator signed';
+  document.getElementById('chip-cn2-state').textContent = '✓ signed';
+  addLine(`CN-2 signature OK · R=1e7c...0b8a S=9f3d...c14e`, 'ok', '00:04');
+  await delay(400);
+
+  // TN-3
+  const tn3El = document.getElementById('chip-tn3');
+  tn3El.className = 'chip-indicator signing';
+  document.getElementById('chip-tn3-state').textContent = 'signing...';
+  await delay(600);
+  tn3El.className = 'chip-indicator signed';
+  document.getElementById('chip-tn3-state').textContent = '✓ signed';
+  addLine(`TN-3 signature OK · R=3c9a...f5d7 S=6b2e...e83c`, 'ok', '00:04');
+  await delay(300);
+
+  // Step 3: Proof generation
+  addLine(`Witness data assembled → proof server (localhost:6300)`, 'dim', '00:05');
+  await delay(600);
+  addLine(`PLONK circuit: verifyIdentity(role=${role}) · generating...`, 'warn', '00:05');
+  await delay(800);
+  addLine(`KZG commitment over BLS12-381 · JubJub Edwards curve`, 'dim', '00:06');
+  await delay(700);
+  addLine(`Proof generated · size=1.2kB · ≤30s total`, 'ok', '00:07');
+  await delay(400);
+
+  // Step 4: On-chain validation
+  addLine(`Submitting to Midnight Network · MidnightProvider...`, 'info', '00:08');
+  await delay(700);
+  addLine(`VIT token on-chain · contract=veh_${v.vin.slice(-6)} · status=${v.status}`, 'ok', '00:09');
+  await delay(500);
+  addLine(`Proof validated against ledger state ✓`, 'ok', '00:10');
+  await delay(400);
+
+  // Step 5: Selective disclosure
+  addLine(`Applying selective disclosure · requesterRole=${role}`, 'info', '00:10');
+  await delay(500);
+
+  const fields = getDisclosedFields(role, v);
+  fields.forEach(f => {
+    if (f.disclosed) addLine(`  disclose(${f.key}) → ${f.display}`, 'ok', '00:11');
+    else addLine(`  ${f.key} → [WITHHELD · not authorised for ${role}]`, 'dim', '00:11');
+  });
+
+  await delay(400);
+  addLine(`Verification complete.`, 'ok', '00:12');
+
+  document.getElementById('simStatus').textContent = 'DONE';
+  document.getElementById('simStatus').className = 'sim-status done';
+
+  // Show result
+  showResult(v, role, fields, true);
+
+  running = false;
+  document.getElementById('runBtn').disabled = false;
+}
+
+async function finishFailed(v) {
+  await delay(500);
+  document.getElementById('simStatus').textContent = 'FAILED';
+  document.getElementById('simStatus').className = 'sim-status running';
+
+  const badge = document.getElementById('proofBadge');
+  badge.className = 'proof-badge visible invalid';
+  document.getElementById('badgeIcon').textContent = '✗';
+  document.getElementById('badgeLabel').className = 'pb-label invalid';
+  document.getElementById('badgeLabel').textContent = 'PROOF INVALID — Hardware Tamper Detected';
+  document.getElementById('badgeSub').textContent = '3-of-3 co-signature failed · EN-1 unresponsive';
+
+  document.getElementById('fieldList').innerHTML = `
+    <div class="field-group-label">RESULT</div>
+    <div class="field-item shown">
+      <span class="field-key">proof_valid</span>
+      <span class="field-value red">false</span>
+    </div>
+    <div class="field-item shown">
+      <span class="field-key">failure_reason</span>
+      <span class="field-value red">EN-1 chip tampered or removed</span>
+    </div>
+    <div class="field-item shown">
+      <span class="field-key">all_fields</span>
+      <span class="field-value redacted">[WITHHELD — proof failed]</span>
+    </div>
+  `;
+  document.querySelectorAll('.field-item').forEach((el, i) => {
+    setTimeout(() => el.className = 'field-item shown', i * 150);
+  });
+
+  running = false;
+  document.getElementById('runBtn').disabled = false;
+}
+
+// ── FIELD DEFINITIONS BY ROLE + SCENARIO ──
+function getDisclosedFields(role, v) {
+  const isStolenForPolice = role === 'police' && v.status === 'STOLEN';
+
+  const all = [
+    { key: 'proof_valid',      display: 'true',          disclosed: true,  always: true },
+    { key: 'status',           display: v.status,        disclosed: true,  always: true },
+    {
+      key: 'vin',
+      display: v.vin,
+      disclosed: ['government','owner'].includes(role) || isStolenForPolice,
+    },
+    {
+      key: 'transfer_count',
+      display: String(v.transferCount),
+      disclosed: ['insurer','dealer','government','owner'].includes(role),
+    },
+    {
+      key: 'service_count',
+      display: String(v.serviceCount),
+      disclosed: ['insurer','dealer','owner'].includes(role),
+    },
+    {
+      key: 'mint_timestamp',
+      display: v.mintTimestamp,
+      disclosed: ['owner'].includes(role),
+    },
+    {
+      key: 'build_spec_hash',
+      display: v.buildSpecHash,
+      disclosed: ['owner'].includes(role),
+    },
+    {
+      key: 'owner_identity',
+      display: '—',
+      disclosed: false,
+      note: 'not on-chain by design'
+    },
+  ];
+  return all;
+}
+
+// ── SHOW RESULT FIELDS ──
+function showResult(v, role, fields, valid) {
+  const badge = document.getElementById('proofBadge');
+  badge.className = 'proof-badge visible ' + (valid ? 'valid' : 'invalid');
+  document.getElementById('badgeIcon').textContent = valid ? '🛡' : '✗';
+  document.getElementById('badgeLabel').className = 'pb-label ' + (valid ? 'valid' : 'invalid');
+
+  let badgeText = 'PROOF VALID';
+  if (v.status === 'STOLEN') badgeText = 'PROOF VALID · VEHICLE STOLEN';
+  if (v.status === 'FLAGGED') badgeText = 'PROOF VALID · RECALL FLAG ACTIVE';
+  document.getElementById('badgeLabel').textContent = badgeText;
+  document.getElementById('badgeSub').textContent = `PLONK proof · Midnight Network · VIT-1 · 3-of-3 co-sig`;
+
+  const list = document.getElementById('fieldList');
+  list.innerHTML = '';
+
+  const disclosed = fields.filter(f => f.disclosed);
+  const withheld  = fields.filter(f => !f.disclosed);
+
+  if (disclosed.length) {
+    const gl = document.createElement('div');
+    gl.className = 'field-group-label';
+    gl.textContent = 'DISCLOSED — visible to ' + roles[role].name;
+    list.appendChild(gl);
+
+    disclosed.forEach((f, i) => {
+      const el = document.createElement('div');
+      el.className = 'field-item';
+      let valClass = 'revealed';
+      if (f.key === 'proof_valid') valClass = 'green';
+      if (f.key === 'status' && ['STOLEN','FLAGGED'].includes(f.display)) valClass = 'amber';
+      if (f.key === 'status' && f.display === 'ACTIVE') valClass = 'green';
+      el.innerHTML = `<span class="field-key">${f.key}</span><span class="field-value ${valClass}">${f.display}</span>`;
+      list.appendChild(el);
+      setTimeout(() => { el.className = 'field-item shown'; }, 100 + i * 120);
+    });
+  }
+
+  if (withheld.length) {
+    const gl2 = document.createElement('div');
+    gl2.className = 'field-group-label';
+    gl2.style.marginTop = '14px';
+    gl2.textContent = 'WITHHELD — not authorised for this role';
+    list.appendChild(gl2);
+
+    withheld.forEach((f, i) => {
+      const el = document.createElement('div');
+      el.className = 'field-item hidden-field';
+      const note = f.note ? ` (${f.note})` : '';
+      el.innerHTML = `<span class="field-key" style="color:var(--text-m)">${f.key}${note}</span><span class="field-value redacted">█████████</span>`;
+      list.appendChild(el);
+      setTimeout(() => { el.className = 'field-item hidden-field'; }, 200 + i * 80);
+    });
+  }
+}
+
+// ── INIT ──
+selectRole('police', document.querySelector('[data-role="police"]'));
+selectScenario('active', document.querySelector('[data-sc="active"]'));
+</script>
+
+</body>
+</html>
