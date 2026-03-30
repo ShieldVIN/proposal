@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShieldVIN — Cryptographic Vehicle Identity on Midnight Network</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:     #040d1e;
+    --card:   #0b1629;
+    --purple: #6d35e8;
+    --purple-l: #9b70f0;
+    --cyan:   #00d4ff;
+    --text:   #eef2ff;
+    --text-s: #94a3c0;
+    --text-m: #5a6a8a;
+    --border: rgba(109,53,232,0.25);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+  }
+
+  .wrap { max-width: 680px; width: 100%; text-align: center; }
+
+  .logo {
+    font-family: 'Exo 2', sans-serif;
+    font-size: 2.6rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    margin-bottom: 6px;
+  }
+  .logo span { color: var(--cyan); }
+
+  .tagline {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--purple-l);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+
+  .headline {
+    font-family: 'Exo 2', sans-serif;
+    font-size: clamp(1.3rem, 4vw, 1.9rem);
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: 16px;
+  }
+  .headline span { color: var(--cyan); }
+
+  .sub {
+    font-size: 0.95rem;
+    color: var(--text-s);
+    line-height: 1.7;
+    max-width: 520px;
+    margin: 0 auto 40px;
+    font-weight: 300;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 500px) { .cards { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 16px 20px;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  }
+  .card:hover { transform: translateY(-3px); }
+  .card.c-cyan  { border-color: rgba(0,212,255,0.3); }
+  .card.c-cyan:hover  { border-color: var(--cyan); box-shadow: 0 8px 28px rgba(0,212,255,0.12); }
+  .card.c-purple { border-color: rgba(109,53,232,0.4); }
+  .card.c-purple:hover { border-color: var(--purple-l); box-shadow: 0 8px 28px rgba(109,53,232,0.18); }
+  .card.c-white { border-color: rgba(238,242,255,0.15); }
+  .card.c-white:hover { border-color: rgba(238,242,255,0.35); box-shadow: 0 8px 28px rgba(238,242,255,0.06); }
+
+  .card-icon { font-size: 1.8rem; }
+  .card-title {
+    font-family: 'Exo 2', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+  .card.c-cyan   .card-title { color: var(--cyan); }
+  .card.c-purple .card-title { color: var(--purple-l); }
+
+  .card-desc {
+    font-size: 0.77rem;
+    color: var(--text-m);
+    line-height: 1.5;
+    text-align: center;
+  }
+  .card-action {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+  }
+  .card.c-cyan   .card-action { color: var(--cyan); }
+  .card.c-purple .card-action { color: var(--purple-l); }
+  .card.c-white  .card-action { color: var(--text-s); }
+
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    flex-wrap: wrap;
+    padding: 20px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+  .stat-num {
+    font-family: 'Exo 2', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--cyan);
+    display: block;
+    line-height: 1;
+  }
+  .stat-label { font-size: 0.72rem; color: var(--text-m); margin-top: 3px; }
+
+  .badge {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text-m);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 12px;
+    letter-spacing: 0.08em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="logo">Shield<span>VIN</span></div>
+  <div class="tagline">Concept Proposal · Midnight Network · 2026</div>
+
+  <h1 class="headline">Cryptographic proof that a vehicle<br>is <span>exactly what it claims to be.</span></h1>
+  <p class="sub">Three Secure Element chips. Three physical locations. All three must co-sign every identity proof. VIN cloning and chassis number fraud become permanently impossible on new vehicles — built on Midnight Network's zero-knowledge proof infrastructure.</p>
+
+  <div class="stats">
+    <div>
+      <span class="stat-num">$20B</span>
+      <div class="stat-label">lost annually to VIN fraud</div>
+    </div>
+    <div>
+      <span class="stat-num">3-of-3</span>
+      <div class="stat-label">hardware co-signatures required</div>
+    </div>
+    <div>
+      <span class="stat-num">0</span>
+      <div class="stat-label">personal data on-chain</div>
+    </div>
+    <div>
+      <span class="stat-num">&lt;30s</span>
+      <div class="stat-label">live ZK proof time</div>
+    </div>
+  </div>
+
+  <div class="cards">
+    <a href="https://mrjustjinx.github.io/shieldvin_midnight/shieldvin-summary.html" class="card c-cyan" target="_blank">
+      <div class="card-icon">📄</div>
+      <div class="card-title">One-Page Summary</div>
+      <div class="card-desc">Chips, proof flow, stakeholder access, revenue — all on one screen.</div>
+      <div class="card-action">START HERE →</div>
+    </a>
+    <a href="https://mrjustjinx.github.io/shieldvin_midnight/shieldvin-demo.html" class="card c-purple" target="_blank">
+      <div class="card-icon">▶</div>
+      <div class="card-title">Interactive Demo</div>
+      <div class="card-desc">Run a live verification for each stakeholder role and vehicle scenario.</div>
+      <div class="card-action">TRY IT →</div>
+    </a>
+    <a href="https://mrjustjinx.github.io/shieldvin_midnight/whitepaper.html" class="card c-white" target="_blank">
+      <div class="card-icon">📋</div>
+      <div class="card-title">Full Whitepaper</div>
+      <div class="card-desc">15-section business plan and technical proposal for Midnight Network.</div>
+      <div class="card-action">READ →</div>
+    </a>
+    <a href="https://mrjustjinx.github.io/shieldvin_midnight/market-opportunity.html" class="card c-white" target="_blank">
+      <div class="card-icon">📊</div>
+      <div class="card-title">Market Opportunity</div>
+      <div class="card-desc">Toyota · BYD · Ford US adoption scenarios with live revenue modelling sliders.</div>
+      <div class="card-action">EXPLORE →</div>
+    </a>
+  </div>
+
+  <div class="badge" style="margin-bottom:20px;">PLONK / KZG · Compact Smart Contracts · Ed25519 Hardware Attestation</div>
+
+  <div style="font-family:'IBM Plex Sans',sans-serif;font-size:0.75rem;color:var(--text-m);line-height:1.8;border-top:1px solid var(--border);padding-top:16px;width:100%;text-align:center;">
+    <div>© 2026 <strong style="color:var(--text-s);">MJ Krugell</strong>. All rights reserved.</div>
+    <div>Concept proposal — not licensed for commercial use without permission.</div>
+  </div>
+
+</div>
+</body>
+</html>
