@@ -1,5 +1,5 @@
 # VAP-1 — Vehicle Authentication Protocol
-## Verification API & Protocol Standard — Draft v0.3
+## Verification API & Protocol Standard — Draft v0.4
 
 **Status:** Draft — for review by ShieldVIN governance consortium and Midnight Network technical team
 **Date:** 2026-03
@@ -11,13 +11,14 @@
 
 VAP-1 defines the request/response protocol used by all external parties — law enforcement, insurers, dealers, government agencies, and vehicle owners — to query a vehicle's identity on the Midnight Network.
 
-The API separates three distinct operations:
+The API separates four distinct operation types:
 
 | Operation | Description |
 |-----------|-------------|
 | **Live proof** | Vehicle hardware generates a fresh ZK proof in real time. Highest assurance. Used at points of sale, import/export, and crime scenes. |
 | **Cached status** | Signed certificate from last live proof, valid for a defined TTL. Used at routine checkpoints where sub-second response is required. |
 | **Lifecycle event** | Write operations — flag stolen, record service, transfer ownership, decommission. Requires appropriate authority credential. |
+| **Hardware recovery** | Multi-party key rotation for legitimate node replacement (warranty repair, recall, accidental damage). Requires surviving node co-signature plus institutional authorisation. See Section 4.7. |
 
 All API responses include a block hash and proof hash that can be independently verified on-chain against the Midnight Network state.
 
@@ -363,6 +364,176 @@ POST /lifecycle/decommission
 
 ---
 
+### 4.7 Hardware Recovery Endpoints
+
+Node replacement for legitimate hardware failure, manufacturer recall, or accidental damage. The full procedure is defined in `hardware-recovery.md`. These three endpoints map to the steps of that procedure.
+
+Recovery requires a minimum number of surviving nodes plus institutional co-signatures. No single party can authorise a key rotation unilaterally.
+
+| Scenario | Surviving Nodes | Required Authorisations |
+|----------|----------------|------------------------|
+| Single node failure | 2 of 3 | 2 surviving nodes + OEM + Dealer |
+| Two node failure | 1 of 3 | 1 surviving node + OEM + Insurer + Government |
+| All nodes lost | 0 of 3 | No recovery — Decommission only |
+
+---
+
+#### 4.7.1 Initiate Recovery Session
+
+Called by an authorised dealer to open a recovery session. Returns a session nonce that the surviving nodes must sign in Step 2.
+
+**Endpoint**
+```
+POST /recovery/initiate
+```
+
+**Request**
+```json
+{
+  "vin": "1HGBH41JXMN109186",
+  "failed_node": "EN-1",
+  "failure_type": "hardware_failure",
+  "dealer_credential": "eyJhb...",
+  "oem_work_order": "WO-2026-GB-77412",
+  "timestamp": "2026-03-28T10:00:00Z"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `vin` | string(17) | ISO 3779 VIN of the vehicle being recovered |
+| `failed_node` | string | One of: `EN-1`, `CN-2`, `TN-3`. For two-node failure, use comma-separated: `"EN-1,CN-2"` |
+| `failure_type` | string | One of: `hardware_failure`, `recall_replacement`, `accidental_damage` |
+| `dealer_credential` | JWT | Authorised dealer VAP-1 credential |
+| `oem_work_order` | string | Manufacturer-issued work order reference |
+| `timestamp` | ISO 8601 | Request timestamp |
+
+**Response — Success (200)**
+```json
+{
+  "result": "success",
+  "session_id": "REC-2026-0328-77412",
+  "recovery_nonce": "f4c91a3b2e870d56c1984f2a",
+  "session_type": "single_node",
+  "failed_node": "EN-1",
+  "surviving_nodes": ["CN-2", "TN-3"],
+  "required_authorisations": ["oem", "dealer"],
+  "session_ttl_hours": 24,
+  "expires_at": "2026-03-29T10:00:00Z"
+}
+```
+
+The `recovery_nonce` must be signed by all surviving nodes. The signed proofs are submitted in Step 3 (`/recovery/complete`). The session expires at `expires_at` — an expired session returns `RECOVERY_SESSION_EXPIRED` and the procedure must restart.
+
+---
+
+#### 4.7.2 OEM Authorisation
+
+The original vehicle manufacturer authorises the key rotation. This attests the replacement is a legitimate warranty or recall action. Required for all recovery scenarios.
+
+For two-node recovery, additional authorisations from the insurer and government authority must also be collected before calling `/recovery/complete`. These are submitted as additional signed JWT tokens in the completion request.
+
+**Endpoint**
+```
+POST /recovery/authorise-oem
+```
+
+**Request**
+```json
+{
+  "session_id": "REC-2026-0328-77412",
+  "oem_credential": "eyJhb...",
+  "replacement_part_serial": "ECU-NXP-SN-GH991122",
+  "timestamp": "2026-03-28T11:30:00Z"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `session_id` | string | Session ID from `/recovery/initiate` |
+| `oem_credential` | JWT | Manufacturer VAP-1 credential (`manufacturer` role) |
+| `replacement_part_serial` | string | Serial number of the new SE chip being installed |
+| `timestamp` | ISO 8601 | Authorisation timestamp |
+
+**Response — Success (200)**
+```json
+{
+  "result": "success",
+  "session_id": "REC-2026-0328-77412",
+  "oem_authorisation_recorded": true,
+  "pending_authorisations": [],
+  "ready_to_complete": true,
+  "note": "OEM authorisation recorded. Session ready for /recovery/complete."
+}
+```
+
+For two-node recovery sessions, `pending_authorisations` will list the additional parties still required (e.g., `["insurer", "government"]`) and `ready_to_complete` will be `false` until all are collected.
+
+---
+
+#### 4.7.3 Complete Key Rotation
+
+Submits the surviving node proofs, all collected authorisations, and the new chip's public key. Triggers the `NODE_KEY_ROTATION` on-chain transaction.
+
+**Endpoint**
+```
+POST /recovery/complete
+```
+
+**Request — Single Node Recovery**
+```json
+{
+  "session_id": "REC-2026-0328-77412",
+  "surviving_node_proofs": "eyJhb...",
+  "oem_authorisation": "eyJhb...",
+  "new_node_public_key": "3f7a9c2b8e1d4056af91bc4d",
+  "timestamp": "2026-03-28T13:00:00Z"
+}
+```
+
+**Request — Two-Node Recovery (additional fields)**
+```json
+{
+  "session_id": "REC-2026-0328-88821",
+  "surviving_node_proofs": "eyJhb...",
+  "oem_authorisation": "eyJhb...",
+  "insurer_authorisation": "eyJhb...",
+  "government_authorisation": "eyJhb...",
+  "new_node_public_keys": {
+    "EN-1": "3f7a9c2b8e1d4056af91bc4d",
+    "CN-2": "a12f8b3c9d2e7041bc56fe83"
+  },
+  "timestamp": "2026-03-29T09:00:00Z"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `session_id` | string | Session ID from `/recovery/initiate` |
+| `surviving_node_proofs` | JWT | ZK proof that surviving nodes signed the recovery nonce |
+| `oem_authorisation` | JWT | OEM authorisation from `/recovery/authorise-oem` |
+| `insurer_authorisation` | JWT | Required for two-node recovery only |
+| `government_authorisation` | JWT | Required for two-node recovery only |
+| `new_node_public_key` / `new_node_public_keys` | hex / object | New Ed25519 public key(s) for the replacement chip(s) |
+
+**Response — Success (200)**
+```json
+{
+  "result": "success",
+  "event": "NODE_KEY_ROTATION",
+  "session_id": "REC-2026-0328-77412",
+  "vin": "1HGBH41JXMN109186",
+  "rotation_type": "single_node",
+  "rotated_node": "EN-1",
+  "tx_hash": "0xe4a72c...",
+  "block_height": 4822100,
+  "timestamp": "2026-03-28T13:00:18Z",
+  "note": "NODE_ROTATION event is permanently recorded in the vehicle history and visible to law enforcement and government queries."
+}
+```
+
+---
+
 ## 5. Error Responses
 
 All errors use standard HTTP status codes with a consistent body:
@@ -387,6 +558,10 @@ All errors use standard HTTP status codes with a consistent body:
 | 429 | `RATE_LIMIT` | Query rate limit exceeded for this credential |
 | 502 | `NETWORK_UNAVAILABLE` | Midnight Network validator set temporarily unreachable |
 | 504 | `PROOF_TIMEOUT` | Vehicle TN-3 did not respond within the proof window (60s) |
+| 400 | `RECOVERY_SESSION_EXPIRED` | Recovery session TTL has elapsed (24h single node, 72h two node). Restart the procedure. |
+| 400 | `RECOVERY_INSUFFICIENT_SIGNATURES` | `/recovery/complete` submitted before all required authorisations were collected |
+| 403 | `RECOVERY_RATE_LIMIT` | Maximum node rotations for this VIN reached (2 per 12 months). Government authority sign-off required for a third rotation. |
+| 409 | `RECOVERY_NODE_MISMATCH` | Surviving node proofs do not match nodes recorded as surviving at session initiation |
 
 ---
 
@@ -423,7 +598,7 @@ No personally identifiable information is transmitted through this API. Ownershi
 
 ## 9. Versioning
 
-This is **VAP-1 Draft v0.3**. Breaking changes increment the major version (VAP-2). The API path includes the version prefix (`/v1/`). Non-breaking additions are backwards compatible within the same major version.
+This is **VAP-1 Draft v0.4**. Breaking changes increment the major version (VAP-2). The API path includes the version prefix (`/v1/`). Non-breaking additions are backwards compatible within the same major version.
 
 ---
 
