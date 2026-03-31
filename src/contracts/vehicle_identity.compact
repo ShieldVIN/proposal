@@ -12,19 +12,27 @@
 // questions are annotated with REVIEW: comments.
 //
 // ARCHITECTURE NOTE — One contract per vehicle OR registry contract:
-//   Compact supports a Map<K, V> ledger type (confirmed: example-kitties
-//   uses Map<Uint<64>, Kitty> and Map<Uint<64>, Map<ZswapCoinPublicKey, Offer>>).
+//   Map<K, V> is a confirmed first-class ledger type in Compact.
+//   Map operations confirmed: insert, remove, lookup, member, isEmpty, size.
 //   ShieldVIN therefore has two viable architectures:
 //
 //   Option A — One contract per vehicle (this stub's approach):
 //     Each vehicle = one deployed contract instance. Constructor = minting event.
 //     Clean isolation per vehicle; higher deployment cost at scale.
+//     Example ledger pattern:
+//       export ledger vin: Bytes<17>;
+//       export ledger status: VehicleStatus;
 //
-//   Option B — Registry contract:
-//     One contract with Map<Bytes<17>, VehicleRecord> (VIN → state).
-//     More efficient at scale; requires careful access-control design.
+//   Option B — Registry contract (RECOMMENDED for enterprise scale):
+//     One contract with Maps keyed by VIN hash:
+//       export ledger vinRegistry:    Map<Bytes<32>, Boolean>;    // VIN hash → registered
+//       export ledger vehicleStatus:  Map<Bytes<32>, VehicleStatus>;
+//       export ledger ownershipStore: Map<Bytes<32>, Bytes<32>>;  // VIN hash → owner commitment
+//     More efficient at scale; requires careful per-VIN access-control design.
 //
-//   REVIEW with Midnight team which pattern is preferred for enterprise scale.
+//   REVIEW with Midnight team: For an enterprise fleet of millions of vehicles,
+//   which pattern is operationally preferred? Option B reduces deployment
+//   overhead significantly but concentrates state in one contract.
 //
 // PROVER NOTE — TN-3 as proof-assembler:
 //   In Midnight's architecture the proof server is a local Docker
@@ -91,11 +99,14 @@ export enum VehicleStatus {
 // appears on-chain — only the proofs and hash commitments do.
 //
 // PRODUCTION NOTE on VIN: In production, replace 'vin' with
-//   vinHash: Bytes<32>   (SHA-256 of the plain VIN)
+//   vinHash: Bytes<32>   (persistentHash of the plain VIN)
 // The plain VIN is then provided as a private witness and
 // disclosed only to authorised roles after the circuit verifies:
-//   sha256(witnessVin) == vinHash
+//   persistentHash<Bytes<17>>(witnessVin) == vinHash
 // This prevents the VIN being publicly readable from the ledger.
+// NOTE: Use persistentHash (SHA-256) — NOT transientHash (Poseidon).
+// transientHash is cheaper in-circuit but must NOT be used for values
+// stored in ledger state, as it may change across Compact versions.
 // This stub uses plain VIN for design-review clarity.
 //
 // Uint<N> confirmed valid: example-kitties uses Uint<64> (price) and Uint<32>
@@ -216,52 +227,85 @@ constructor(
 // specifically for when the VALUE being written comes from a
 // private witness computation.
 //
-// REVIEW on read-only selective disclosure:
-//   In Compact, public ledger fields are readable by any observer.
-//   For verifyIdentity, the role-based "selective disclosure"
-//   pattern below expresses the DESIGN INTENT — i.e. the
-//   verification API returns different fields to different callers.
-//   In a production Compact implementation, this may be better
-//   expressed as:
-//     (a) separate circuits per role (verifyPolice, verifyInsurer…)
-//     (b) a circuit that returns a typed result struct
-//     (c) off-chain API filtering on top of a simpler ZK proof
-//   Validate the preferred pattern with the Midnight team.
+// CONFIRMED: Role-based selective disclosure in Compact.
+//   A single circuit CANNOT conditionally return different data to
+//   different roles at runtime. Compact has no runtime caller-identity
+//   mechanism analogous to Solidity's msg.sender.
+//   The disclose() operator is a compile-time signal, not a runtime
+//   branching tool. Witness values enable per-caller private input,
+//   but circuit outputs are structurally fixed.
+//
+//   CONFIRMED PATTERN: Separate circuits per role.
+//   The verifyIdentity circuit below retains the role-branching logic
+//   as design-intent documentation, but the production implementation
+//   should be refactored into:
+//     verifyPolice()     — status only; VIN if STOLEN
+//     verifyInsurer()    — status + ownership count + service count
+//     verifyDealer()     — status + ownership count + service count
+//     verifyGovernment() — status + VIN + ownership count
+//     verifyOwner()      — full record
+//   Each circuit has its own witness context and disclose() calls.
+//   REVIEW with Midnight team: confirm this per-role circuit pattern
+//   before committing to the production contract structure.
 // ─────────────────────────────────────────────────────────────
 
 // ── verifyIdentity ───────────────────────────────────────────
-// Proves the vehicle is authentic (all 3 SE chips co-signed the
-// challenge nonce) and selectively reveals fields by caller role.
+// Design intent: Proves the vehicle is authentic (all 3 SE chips
+// co-signed the challenge nonce) and selectively reveals fields by
+// caller role.
 //
-// REVIEW: verifyEd25519() — assumed to be in CompactStandardLibrary.
-// Confirm exact function name and signature.
+// NOTE: This single circuit with role branching is a design-intent
+// stub. Production implementation must use separate per-role circuits
+// (verifyPolice, verifyInsurer, etc.) — see CONFIRMED pattern note above.
 //
-// REVIEW: requesterRole as Uint<8> — verify integer type. May
-// need to be Field or a declared enum.
-//
-// REVIEW: Return type [] — if role-specific data must be returned
-// as a typed value, this needs a union/tuple return type or
-// separate per-role circuits.
+// NOTE: Uint<8> — Uint<64> and Uint<32> are confirmed; Uint<8>
+// is likely valid by the same pattern but confirm with Midnight team.
 export circuit verifyIdentity(
-  requesterRole: Uint<8>   // REVIEW: Uint<8> — Uint<64> and Uint<32> are confirmed; Uint<8> likely valid by same pattern
+  requesterRole: Uint<8>
 ): [] {
-  // ── Step 1: Verify all three SE chips signed the challenge nonce ──
-  // REVIEW: verifyEd25519() — confirm CompactStandardLibrary export
-  assert(
-    verifyEd25519(en1WitnessPk(), challengeNonce(), en1SignatureR(), en1SignatureS()),
-    "EN-1 signature invalid"
-  );
-  assert(
-    verifyEd25519(cn2WitnessPk(), challengeNonce(), cn2SignatureR(), cn2SignatureS()),
-    "CN-2 signature invalid"
-  );
-  assert(
-    verifyEd25519(tn3WitnessPk(), challengeNonce(), tn3SignatureR(), tn3SignatureS()),
-    "TN-3 signature invalid"
-  );
+  // ── Step 1: Design intent — Ed25519 signature verification ──
+  //
+  // CRITICAL REVIEW ITEM: verifyEd25519() does NOT exist in
+  // CompactStandardLibrary as of March 2026. There is no Ed25519
+  // signature verification primitive in Compact stdlib.
+  //
+  // Low-level EC primitives DO exist (ecAdd, ecMul, ecMulGenerator,
+  // hashToCurve) and could theoretically be used to construct Ed25519
+  // verification manually, but this is complex and out of scope for
+  // this stub.
+  //
+  // REVIEW with Midnight team — three options:
+  //   (a) Is a verifyEd25519() builtin planned for a future Compact version?
+  //   (b) Can Ed25519 verification be constructed from the existing EC
+  //       primitives (ecMul, ecMulGenerator, hashToCurve)? If so, can
+  //       the Midnight team provide a reference implementation?
+  //   (c) Should ShieldVIN use an alternative ZK credential scheme —
+  //       e.g., commit to a Poseidon-hashed key derivation path, or
+  //       use a JubJub-native signature scheme that Midnight already
+  //       supports natively through the PLONK/JubJub proof system?
+  //
+  // The pseudocode below documents the intended verification logic.
+  // It is commented out because the function does not compile today.
+  //
+  // assert(
+  //   verifyEd25519(en1WitnessPk(), challengeNonce(), en1SignatureR(), en1SignatureS()),
+  //   "EN-1 signature invalid"
+  // );
+  // assert(
+  //   verifyEd25519(cn2WitnessPk(), challengeNonce(), cn2SignatureR(), cn2SignatureS()),
+  //   "CN-2 signature invalid"
+  // );
+  // assert(
+  //   verifyEd25519(tn3WitnessPk(), challengeNonce(), tn3SignatureR(), tn3SignatureS()),
+  //   "TN-3 signature invalid"
+  // );
 
-  // ── Step 2: Bind witness keys to committed on-chain public keys ──
-  // This proves the chips that signed ARE the chips registered at manufacture.
+  // ── Step 2: Key binding — witness keys must match ledger commitments ──
+  // This is compilable today. It proves that the caller possesses the
+  // public keys registered at manufacture — a necessary condition for
+  // authenticity, though not sufficient without Step 1's signature check.
+  // Once the Ed25519 primitive question is resolved with the Midnight team,
+  // Step 1 and Step 2 together provide the full hardware authentication proof.
   assert(en1WitnessPk() == en1PublicKey, "EN-1 key mismatch — not the registered chip");
   assert(cn2WitnessPk() == cn2PublicKey, "CN-2 key mismatch — not the registered chip");
   assert(tn3WitnessPk() == tn3PublicKey, "TN-3 key mismatch — not the registered chip");
@@ -305,14 +349,17 @@ export circuit verifyIdentity(
 // revealing their identity. Updates the ownership hash commitment.
 //
 // The ownerSecret() witness proves ownership:
-//   sha256(ownerSecret()) must equal the on-chain ownershipHash.
+//   persistentHash<Bytes<32>>(ownerSecret()) must equal ownershipHash.
 // The newOwnerCommit() witness is the new owner's hash commitment.
 // disclose() wraps the witness value being written to the ledger.
 //
-// REVIEW: sha256() — confirm function name in CompactStandardLibrary.
+// CONFIRMED: Use persistentHash<T>(value: T): Bytes<32> — this is
+// the SHA-256 equivalent in CompactStandardLibrary. Do NOT use
+// sha256() (does not exist) or transientHash() (Poseidon, not SHA-256,
+// must not be used for ledger-persisted values).
 export circuit transferOwnership(): [] {
   assert(
-    sha256(ownerSecret()) == ownershipHash,
+    persistentHash<Bytes<32>>(ownerSecret()) == ownershipHash,
     "Ownership proof failed — caller is not the registered owner"
   );
   assert(
