@@ -270,9 +270,37 @@ input[type=range].blue::-webkit-slider-thumb {
       <div class="assum-sub">New vehicles/year — 21.3% of global production</div>
     </div>
     <div class="assum-box">
-      <div class="assum-label">Minting Fee Assumed</div>
-      <div class="assum-val cyan">$9</div>
-      <div class="assum-sub">Per vehicle (volume tier for Tier 1 OEM)</div>
+      <div class="assum-label">Minting Fee (chart midpoint)</div>
+      <div class="assum-val cyan">$7</div>
+      <div class="assum-sub">Illustrative midpoint. Actual tiers: Ultra-scale $3–5 · Large OEM $8–12 · Mid $12–18 · Small $20–25/vehicle</div>
+    </div>
+  </div>
+
+  <!-- PER-VEHICLE REVENUE CALLOUT -->
+  <div style="background:rgba(0,212,255,0.06); border:1px solid rgba(0,212,255,0.22); border-left:3px solid var(--cyan); border-radius:10px; padding:1.25rem 1.5rem; margin-bottom:1.5rem;">
+    <div style="font-family:var(--font-h); font-size:0.78rem; font-weight:700; color:var(--cyan); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.75rem;">Full Per-Vehicle Revenue Picture — 5-Stream Model</div>
+    <p style="font-size:0.875rem; color:var(--text-2); margin-bottom:0.75rem;">Charts below show minting fee revenue only (using $7 illustrative midpoint). The full ShieldVIN model adds four further revenue streams per enrolled vehicle — all billed in fiat currency. These are speculative projections that vary by region and OEM tier.</p>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:rgba(0,212,255,0.15); border-radius:6px; overflow:hidden;">
+      <div style="background:var(--bg-card); padding:0.9rem 1rem;">
+        <div style="font-size:0.68rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-3); font-weight:600; margin-bottom:4px;">Minting Fee (in chart)</div>
+        <div style="font-family:var(--font-h); font-size:1.2rem; font-weight:800; color:var(--cyan);">$3–$25</div>
+        <div style="font-size:0.72rem; color:var(--text-2);">Volume tier — one-time at manufacture</div>
+      </div>
+      <div style="background:var(--bg-card); padding:0.9rem 1rem;">
+        <div style="font-size:0.68rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-3); font-weight:600; margin-bottom:4px;">Verification API (lifetime)</div>
+        <div style="font-family:var(--font-h); font-size:1.2rem; font-weight:800; color:var(--purple-light);">$5–$40</div>
+        <div style="font-size:0.72rem; color:var(--text-2);">Insurer/lender queries over vehicle life</div>
+      </div>
+      <div style="background:var(--bg-card); padding:0.9rem 1rem;">
+        <div style="font-size:0.68rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-3); font-weight:600; margin-bottom:4px;">Dealer + Consumer Transfers</div>
+        <div style="font-family:var(--font-h); font-size:1.2rem; font-weight:800; color:var(--combined);">$5–$75</div>
+        <div style="font-size:0.72rem; color:var(--text-2);">Dealer subscription share + $5 private transfers</div>
+      </div>
+      <div style="background:rgba(0,212,255,0.05); padding:0.9rem 1rem; border-left:2px solid rgba(0,212,255,0.3);">
+        <div style="font-size:0.68rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-3); font-weight:600; margin-bottom:4px;">Total Lifetime per Vehicle</div>
+        <div style="font-family:var(--font-h); font-size:1.2rem; font-weight:800; color:var(--cyan);">$13–$140</div>
+        <div style="font-size:0.72rem; color:var(--text-2);">All 5 streams combined — speculative</div>
+      </div>
     </div>
   </div>
 
@@ -280,22 +308,22 @@ input[type=range].blue::-webkit-slider-thumb {
   <div class="stat-row" style="grid-template-columns:repeat(4,1fr);">
     <div class="stat-card toyota">
       <div class="stat-tag r">Toyota — Full Adoption</div>
-      <div class="stat-big r">$94.5M</div>
+      <div class="stat-big r">$73.5M</div>
       <div class="stat-label">Annual minting revenue at 100% Toyota enrollment</div>
     </div>
     <div class="stat-card byd">
       <div class="stat-tag g">BYD — Full Adoption</div>
-      <div class="stat-big g">$38.7M</div>
+      <div class="stat-big g">$30.1M</div>
       <div class="stat-label">Annual minting revenue at 100% BYD enrollment</div>
     </div>
     <div class="stat-card" style="border-top:3px solid var(--ford-blue-bright);">
       <div class="stat-tag" style="color:var(--ford-blue-bright);">Ford US — Full Adoption</div>
-      <div class="stat-big" style="color:var(--ford-blue-bright);">$19.8M</div>
+      <div class="stat-big" style="color:var(--ford-blue-bright);">$15.4M</div>
       <div class="stat-label">Annual minting revenue at 100% Ford US enrollment</div>
     </div>
     <div class="stat-card both">
       <div class="stat-tag a">All Three — Year 1 Full</div>
-      <div class="stat-big a">$153M</div>
+      <div class="stat-big a">$119M</div>
       <div class="stat-label">Minting + API revenue, all three at 100% adoption</div>
     </div>
   </div>
@@ -386,11 +414,11 @@ input[type=range].blue::-webkit-slider-thumb {
       </div>
       <div class="output-box">
         <div class="output-label">Combined Annual Minting</div>
-        <div class="output-val" id="out-mint" style="color:var(--combined)">$153M</div>
+        <div class="output-val" id="out-mint" style="color:var(--combined)">$119M</div>
       </div>
       <div class="output-box">
         <div class="output-label">5-Year Total (incl. API)</div>
-        <div class="output-val" id="out-5yr" style="color:var(--cyan)">$1.01B</div>
+        <div class="output-val" id="out-5yr" style="color:var(--cyan)">$786M</div>
       </div>
     </div>
   </div>
@@ -437,7 +465,7 @@ input[type=range].blue::-webkit-slider-thumb {
   <div class="chart-card" style="margin-bottom:1.5rem;">
     <div class="chart-header">
       <div class="chart-title">Raw Numbers — Manufacturer Breakdown</div>
-      <div class="chart-desc">All figures at 100% adoption. Revenue based on $9 minting fee + $1/vehicle/year API blended rate (5 queries × $0.20).</div>
+      <div class="chart-desc">All figures at 100% adoption. Minting fee shown at $7 illustrative midpoint (actual tiers: $3–25 by OEM scale). Additional API, dealer, and consumer revenue not shown — see full 5-stream model in whitepaper. Speculative projections.</div>
     </div>
     <div style="overflow-x:auto;">
       <table id="rawTable" style="width:100%;border-collapse:collapse;font-size:0.85rem;">
@@ -457,9 +485,9 @@ input[type=range].blue::-webkit-slider-thumb {
             <td style="padding:0.75rem 1rem;font-family:var(--font-h);font-weight:700;color:var(--combined);">Combined (all three)</td>
             <td style="text-align:right;padding:0.75rem 1rem;font-family:var(--font-m);font-weight:700;color:var(--combined);">17.0M units</td>
             <td style="text-align:right;padding:0.75rem 1rem;font-family:var(--font-m);font-weight:700;color:var(--combined);">21.3%</td>
-            <td style="text-align:right;padding:0.75rem 1rem;font-family:var(--font-m);font-weight:700;color:var(--combined);">$153M / yr</td>
+            <td style="text-align:right;padding:0.75rem 1rem;font-family:var(--font-m);font-weight:700;color:var(--combined);">$119M / yr</td>
             <td style="text-align:right;padding:0.75rem 1rem;font-family:var(--font-m);font-weight:700;color:var(--combined);">$42.5M / yr</td>
-            <td style="text-align:right;padding:0.75rem 1rem;font-family:var(--font-m);font-weight:700;color:var(--combined);">~$1.01B</td>
+            <td style="text-align:right;padding:0.75rem 1rem;font-family:var(--font-m);font-weight:700;color:var(--combined);">~$786M</td>
           </tr>
         </tfoot>
       </table>
@@ -472,9 +500,9 @@ input[type=range].blue::-webkit-slider-thumb {
     BYD annual production: 4.304M units (2024 — BYD official sales report, January 2025). BYD growth projection to 5.5M by 2026 based on reported capacity of 5.82M and stated 2025 sales targets of 5–6M units.<br>
     Ford US volume: 2.2M wholesale units (2024 — Ford Motor Company Form 10-K, SEC filing, January 2025). Ford US is Ford's single largest market representing ~49% of global volume.<br>
     Global new vehicle production: ~80M units/year (OICA 2024 estimate).<br>
-    Minting fee: $9 per vehicle (volume tier for Tier 1 OEM — see ShieldVIN business model).<br>
-    API verification revenue: Assumed 5 queries per enrolled vehicle per year at $0.20 average blended rate.<br>
-    All financial figures are illustrative projections based on the ShieldVIN model assumptions. This is not a guarantee of future revenue.
+    Minting fee: $7 per vehicle used in chart calculations as an illustrative midpoint. Actual volume tiers: Ultra-scale OEM (3M+/yr) $3–5, Large OEM (1M–3M/yr) $8–12, Mid OEM (100K–1M/yr) $12–18, Small/early adopter (&lt;100K/yr) $20–25. All fees billed in fiat currency (USD/GBP/EUR) — no crypto wallet required from manufacturers or any other payer.<br>
+    API verification revenue (not shown in these charts): See full 5-stream financial model in whitepaper — insurer/lender API, dealer portal subscriptions, consumer platform, and enterprise &amp; government contracts add materially to the minting revenue shown here.<br>
+    All financial figures are speculative projections based on indicative assumptions. Actual revenue varies materially by region, regulatory environment, OEM adoption rates, and commercial negotiations. Not a financial forecast.
   </div>
 
 </div>
@@ -484,7 +512,7 @@ input[type=range].blue::-webkit-slider-thumb {
 const TOYOTA_VOL = 10.5;   // M units
 const BYD_VOL_2024 = 4.3;  // M units
 const FORD_VOL = 2.2;       // M units — US wholesale 2024 (Ford 10-K)
-const FEE = 9;              // $ per vehicle
+const FEE = 7;              // $ per vehicle (midpoint of $5–$10 range; chip kit margin additional)
 const QUERIES_PER_VEH = 5;
 const QUERY_PRICE = 0.20;
 
@@ -569,15 +597,15 @@ new Chart(document.getElementById('chartSplit'), {
   type: 'doughnut',
   data: {
     labels: [
-      'Toyota minting ($94.5M)',
-      'BYD minting ($38.7M)',
-      'Ford US minting ($19.8M)',
+      'Toyota minting ($73.5M)',
+      'BYD minting ($30.1M)',
+      'Ford US minting ($15.4M)',
       'API — Toyota fleet',
       'API — BYD fleet',
       'API — Ford fleet',
     ],
     datasets: [{
-      data: [94.5, 38.7, 19.8, 26.2, 10.8, 5.5],
+      data: [73.5, 30.1, 15.4, 26.2, 10.8, 5.5],
       backgroundColor: [
         'rgba(235,10,30,0.85)',
         'rgba(29,185,84,0.85)',
@@ -879,27 +907,27 @@ const tableRows = [
     color: 'var(--toyota-red)',
     vol: '10.5M units',
     pct: '13.1%',
-    mint: '$94.5M / yr',
+    mint: '$73.5M / yr',
     api: '$26.3M / yr',
-    fiveyr: '~$580M',
+    fiveyr: '~$451M',
   },
   {
     name: 'BYD (Global)',
     color: 'var(--byd-green)',
     vol: '4.3M units',
     pct: '5.4%',
-    mint: '$38.7M / yr',
+    mint: '$30.1M / yr',
     api: '$10.8M / yr',
-    fiveyr: '~$240M',
+    fiveyr: '~$187M',
   },
   {
     name: 'Ford US',
     color: 'var(--ford-blue-bright)',
     vol: '2.2M units',
     pct: '2.75%',
-    mint: '$19.8M / yr',
+    mint: '$15.4M / yr',
     api: '$5.5M / yr',
-    fiveyr: '~$118M',
+    fiveyr: '~$92M',
   },
 ];
 const tbody = document.getElementById('rawTableBody');
@@ -956,18 +984,5 @@ function updateScenario() {
 // Init
 updateScenario();
 </script>
-
-<footer style="text-align:center;padding:28px 20px;border-top:1px solid rgba(109,53,232,0.2);margin-top:40px;font-family:'IBM Plex Sans',sans-serif;font-size:0.75rem;color:#5a6a8a;line-height:1.8;">
-  <div style="margin-bottom:4px;color:#9b70f0;font-family:'IBM Plex Mono',monospace;letter-spacing:0.06em;">ShieldVIN — Market Opportunity Analysis</div>
-  <div>© 2026 <strong style="color:#94a3c0;">MJ Krugell</strong>. All rights reserved.</div>
-  <div>Concept proposal — not licensed for commercial use without permission.</div>
-  <div style="margin-top:8px;display:flex;justify-content:center;gap:20px;flex-wrap:wrap;">
-    <a href="index.html" style="color:#5a6a8a;text-decoration:none;">← Back to ShieldVIN</a>
-    <a href="shieldvin-summary.html" style="color:#5a6a8a;text-decoration:none;">One-Page Summary</a>
-    <a href="shieldvin-demo.html" style="color:#5a6a8a;text-decoration:none;">Interactive Demo</a>
-    <a href="whitepaper.html" style="color:#5a6a8a;text-decoration:none;">Whitepaper</a>
-  </div>
-</footer>
-
 </body>
 </html>

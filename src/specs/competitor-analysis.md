@@ -130,6 +130,23 @@ Several blockchain-based vehicle history projects exist: **VINchain** (ERC-20 to
 
 ---
 
+## 3.6 eIDAS 2.0 — Regulatory Alignment, Not Competition
+
+**eIDAS 2.0** (EU Regulation 2024/1183) is the EU's revised electronic identity framework. It is not a competing technical platform — it is a regulatory and standards framework for digital identity. It is relevant here because ShieldVIN's architecture is explicitly aligned with it.
+
+| eIDAS 2.0 Concept | ShieldVIN Equivalent |
+|-------------------|---------------------|
+| European Digital Identity Wallet (EUDI Wallet) | TN-3 module / owner wallet credential — device-bound identity |
+| Selective disclosure of credential attributes | `disclose()` in Compact — per-role field disclosure enforced in-circuit |
+| Verifiable Attestations | Vehicle Identity Token on Midnight Network |
+| No unnecessary data to relying parties | Role-based ZK proof — each party receives only their authorised fields |
+
+**Scale context:** eIDAS 2.0 targets 450 million EU users across 4 Large Scale Pilots. Its selective disclosure model validates that ShieldVIN's core design principle — reveal only what is necessary to each party — is the correct regulatory direction for EU deployment.
+
+**Action for Phase 2:** Engage the eIDAS 2.0 working groups (specifically the mdoc/ISO 18013-5 and sd-jwt tracks) to position ShieldVIN's VAP-1 protocol as an automotive-specific attestation scheme within the eIDAS 2.0 framework. This would make ShieldVIN verifiable via any eIDAS 2.0 compliant wallet in the EU — a significant distribution advantage.
+
+---
+
 ## 4. Why Midnight Network
 
 Midnight Network is the only production-track platform that provides all four requirements simultaneously:

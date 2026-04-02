@@ -6,12 +6,15 @@ ShieldVIN embeds three tamper-resistant Secure Element chips into new vehicles a
 
 > This is an active concept proposal directed at Midnight Network. It is not a deployed product.
 
+**[View the live site →](https://mrjustjinx.github.io/shieldvin_midnight/)**
+
 ---
 
 ## Live Documents
 
 | Document | Description |
 |----------|-------------|
+| [Landing Page](https://mrjustjinx.github.io/shieldvin_midnight/) | Project overview and navigation hub |
 | [One-Page Summary](https://mrjustjinx.github.io/shieldvin_midnight/shieldvin-summary.html) | Cold introduction — chips, proof flow, stakeholder access, revenue |
 | [Interactive Demo](https://mrjustjinx.github.io/shieldvin_midnight/shieldvin-demo.html) | Run a live verification for each stakeholder role and vehicle scenario |
 | [Full Whitepaper](https://mrjustjinx.github.io/shieldvin_midnight/whitepaper.html) | 15-section business plan and technical proposal |

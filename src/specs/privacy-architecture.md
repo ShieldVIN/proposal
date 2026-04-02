@@ -28,17 +28,19 @@ Owner identity is held exclusively by the off-chain systems of the relevant part
 The ownership model works as follows:
 
 **At manufacture:**
-- The manufacturer generates a random owner secret `o` and salt `s`
-- The owner commitment is `H(o ∥ s)` where H is SHA-256 — no vehicle identifier is included in the hash
+- The manufacturer generates a random 32-byte owner secret `o`
+- The owner commitment is `H(o)` where H is SHA-256 (Compact: `persistentHash<Bytes<32>>(o)`)
 - The commitment is stored on-chain in the `ownershipHash` field
-- `o` and `s` are stored off-chain in the manufacturer's secure registry until point of sale
+- `o` is stored off-chain in the manufacturer's secure registry until point of sale
 - No owner name or contact detail is ever created at this stage (the first owner is the manufacturer before point of sale)
 
+> **Note on salting:** The 32-byte secret `o` is itself randomly generated and therefore provides equivalent entropy to a salted hash. A separate salt is not required when the preimage is already uniformly random. This matches the `transferOwnership` circuit in `vehicle_identity.compact`, which uses `persistentHash<Bytes<32>>(ownerSecret())` directly.
+
 **At point of sale:**
-- The new owner generates their own private secret `o` (using their TN-3 device credential or a wallet)
+- The new owner generates their own private random 32-byte secret `o` (using their TN-3 device credential or a wallet)
 - The new owner commitment is `H(o)` (SHA-256 of the owner secret — see the Compact contract `transferOwnership` circuit)
 - The dealer submits the new commitment to the VAP-1 ownership transfer endpoint
-- The dealer's off-chain system records `{vin, buyer_id, commitment_salt, timestamp}` in their regulated records
+- The dealer's off-chain system records `{vin, buyer_id, commitment_hash, timestamp}` in their regulated records
 - The blockchain sees only: old commitment replaced by new commitment, transfer count incremented by 1
 
 **At verification:**
@@ -53,7 +55,7 @@ The ownership model works as follows:
 | Data | Where Stored | Jurisdiction | Erasure Possible? |
 |------|-------------|--------------|-------------------|
 | Owner name, address, ID | Dealer / insurer / DMV records | Local jurisdiction | Yes — by those parties |
-| Ownership commitment (hash) | Midnight Network | Distributed | No — but not PII |
+| Ownership commitment (SHA-256 of 32-byte random secret) | Midnight Network | Distributed | No — but not PII |
 | VIN | Midnight Network | Distributed | No — but not PII under GDPR |
 | Vehicle hardware serials (hashed) | Midnight Network | Distributed | No — but not directly linkable to person |
 | Transfer event timestamps | Midnight Network | Distributed | No — but no personal data attached |

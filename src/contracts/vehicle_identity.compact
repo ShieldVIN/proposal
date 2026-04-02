@@ -64,12 +64,49 @@
 //   Mainnet DUST acquisition — confirm current exchange/OTC path
 //   with Midnight Network (not yet documented publicly as of 2026-03).
 //
-// Reference: docs.midnight.network (March 2026)
+// Stack as of March 30, 2026 (Midnight Ledger 8.0):
+//   Ledger 8.0.3 | Node 0.22.3 | Proof Server 8.0.3
+//   Compact Compiler 0.30.0 | Compact Runtime 0.15.0
+//   Midnight.js 4.0.2 | Wallet SDK Facade 3.0.0
+//   Indexer 4.0.1 | DApp Connector API 4.0.1
+//
+// Midnight.js 4.x provider interfaces — all names CONFIRMED from source:
+//   PrivateStateProvider — confirmed (now includes export/import/signing keys)
+//   PublicDataProvider   — confirmed (now has query/watch/observable methods)
+//   ProofProvider        — confirmed (proveTx() method)
+//   WalletProvider       — confirmed (balanceTx, getCoinPublicKey, getEncryptionPublicKey)
+//   MidnightProvider     — confirmed (submitTx() method)
+//   ZkConfigProvider     — NEW in v4: manages ZK artifacts (ZKIR, prover/verifier keys)
+//     Must now be included in DApp setup. Provided by:
+//     @midnight-ntwrk/fetch-zk-config-provider (browser)
+//     @midnight-ntwrk/node-zk-config-provider (Node.js)
+//
+// Package naming change in v4:
+//   Barrel package: @midnight-ntwrk/midnight-js
+//   Individual packages: @midnight-ntwrk/midnight-js-[name]
+//   (e.g. @midnight-ntwrk/midnight-js-types, @midnight-ntwrk/midnight-js-contracts)
+//
+// SIGNING SCHEME DISCOVERY (from base-crypto/src/signatures.rs):
+//   Midnight's native wallet signing is Schnorr over secp256k1 (BIP340) —
+//   NOT Ed25519. This is used for wallet transaction signing (off-circuit).
+//   ownPublicKey() in Compact circuits returns the transaction sender's key.
+//   Ed25519 is still the correct scheme for SE chips (industry standard,
+//   hardware support universal). The Ed25519 in-circuit verification gap
+//   (CRITICAL REVIEW item) remains unresolved — see verifyIdentity comment.
+//
+// Reference: docs.midnight.network / github.com/midnightntwrk (March 2026)
 // ═══════════════════════════════════════════════════════════════
 
-// REVIEW: Docs show pragma language_version >= 0.22 as of latest
-// published tutorials. Update to the current release version before
-// deployment. Using >= 0.22 here to match confirmed syntax.
+// IMPORTANT — Two separate version systems:
+//   pragma language_version = the Compact LANGUAGE spec version (progresses slowly)
+//   Compact Compiler version = the compiler binary version (currently 0.30.0)
+//   These are NOT the same number. Do NOT set pragma to the compiler version.
+//
+// example-kitties (Midnight official) uses >= 0.16.0
+// docs.midnight.network tutorials (March 2026) confirmed >= 0.22 for features used here
+// 0.22 is correct — it is higher than 0.16.0, meaning this contract needs newer
+// language features (e.g. Counter, specific disclose() semantics) than kitties.
+// Do NOT change to >= 0.30 — that would be the compiler version, not language version.
 pragma language_version >= 0.22;
 
 import CompactStandardLibrary;
@@ -133,6 +170,35 @@ export ledger en1PublicKey:   Bytes<32>;   // Engine Node (EN-1) Ed25519 public 
 export ledger cn2PublicKey:   Bytes<32>;   // Chassis Node (CN-2) Ed25519 public key
 export ledger tn3PublicKey:   Bytes<32>;   // Telematics Node (TN-3) Ed25519 public key
 
+// ── CONFIRMED FROM EXAMPLE-KITTIES: ownPublicKey() ────────────
+// Compact has a built-in `ownPublicKey()` function that returns the
+// transaction sender's public key at runtime. This enables on-chain
+// access control without passing an explicit credential parameter.
+//
+// Pattern confirmed from example-kitties:
+//   assert(ownPublicKey() == ownerOf(kittyId), "Not the owner");
+//
+// For ShieldVIN, we store the authorized manufacturer wallet key at
+// mint time. Subsequent lifecycle operations (flagStolen, recall, etc.)
+// validate the caller against a role registry stored on-chain.
+//
+// REVIEW with Midnight team: Does ownPublicKey() return:
+//   (a) The ZswapCoinPublicKey (coin public key from WalletProvider)?
+//   (b) A Schnorr/secp256k1 key (the signing key)?
+//   (c) Some other key type?
+// Answer determines whether the registry should use ZswapCoinPublicKey
+// or Bytes<32> (raw public key hash). Using ZswapCoinPublicKey would
+// require accepting wallet address correlation — may conflict with GDPR.
+// Using Bytes<32> (persistentHash of the public key) avoids correlation.
+//
+// REGISTRY NOTE: In a registry-contract architecture (Option B), the
+// role registry (authorized law enforcement keys, insurer keys, etc.)
+// would live in a separate governance contract, not per-vehicle.
+// This contract stores only the manufacturer key — sufficient for
+// minting authority. Other roles are validated off-chain via VAP-1.
+
+export ledger authorizedMinterKey: Bytes<32>;  // persistentHash(manufacturer wallet public key) — set at mint
+
 // ─────────────────────────────────────────────────────────────
 // WITNESSES — private input providers
 //
@@ -195,10 +261,16 @@ constructor(
   initialTn3PubKey:     Bytes<32>,
   initialOwnerCommit:   Bytes<32>    // SHA-256(ownerSecret) — no PII
 ) {
-  // REVIEW: In production, add:
-  //   assert(isAuthorisedManufacturer(callerAddress), "Unauthorised minter");
-  //   assert(!vinAlreadyDeployed(initialVin), "VIN already registered");
-  // Confirm how caller identity is asserted in Compact.
+  // Store the deployer's public key hash as the authorized minter for this contract.
+  // ownPublicKey() returns the transaction sender's public key (confirmed: example-kitties).
+  // REVIEW: confirm the return type of ownPublicKey() — is it ZswapCoinPublicKey or Bytes<32>?
+  // Using persistentHash wrapper here to normalize to Bytes<32> regardless.
+  // If ownPublicKey() returns Bytes<32> natively, remove the persistentHash wrapper.
+  authorizedMinterKey = persistentHash<Bytes<32>>(ownPublicKey() as Bytes<32>);
+
+  // REVIEW: In production, cross-check ownPublicKey() against an external
+  // VGM-1 manufacturer registry before accepting the mint. Without this check,
+  // any wallet could deploy a vehicle contract. Registry pattern TBD with Midnight team.
 
   vin            = initialVin;
   chassisHash    = initialChassisHash;
@@ -249,99 +321,149 @@ constructor(
 //   before committing to the production contract structure.
 // ─────────────────────────────────────────────────────────────
 
-// ── verifyIdentity ───────────────────────────────────────────
-// Design intent: Proves the vehicle is authentic (all 3 SE chips
-// co-signed the challenge nonce) and selectively reveals fields by
-// caller role.
+// ═══════════════════════════════════════════════════════════════
+// HARDWARE AUTHENTICATION SHARED LOGIC
+// ═══════════════════════════════════════════════════════════════
 //
-// NOTE: This single circuit with role branching is a design-intent
-// stub. Production implementation must use separate per-role circuits
-// (verifyPolice, verifyInsurer, etc.) — see CONFIRMED pattern note above.
+// All five role circuits below begin with the same 2-step hardware
+// authentication proof. This is extracted here for documentation
+// clarity — in Compact there is no shared function mechanism equivalent
+// to a helper function callable from multiple circuits without it
+// becoming a circuit itself. Each role circuit repeats the assertions.
 //
-// NOTE: Uint<8> — Uint<64> and Uint<32> are confirmed; Uint<8>
-// is likely valid by the same pattern but confirm with Midnight team.
-export circuit verifyIdentity(
-  requesterRole: Uint<8>
-): [] {
-  // ── Step 1: Design intent — Ed25519 signature verification ──
-  //
-  // CRITICAL REVIEW ITEM: verifyEd25519() does NOT exist in
-  // CompactStandardLibrary as of March 2026. There is no Ed25519
-  // signature verification primitive in Compact stdlib.
-  //
-  // Low-level EC primitives DO exist (ecAdd, ecMul, ecMulGenerator,
-  // hashToCurve) and could theoretically be used to construct Ed25519
-  // verification manually, but this is complex and out of scope for
-  // this stub.
-  //
-  // REVIEW with Midnight team — three options:
-  //   (a) Is a verifyEd25519() builtin planned for a future Compact version?
-  //   (b) Can Ed25519 verification be constructed from the existing EC
-  //       primitives (ecMul, ecMulGenerator, hashToCurve)? If so, can
-  //       the Midnight team provide a reference implementation?
-  //   (c) Should ShieldVIN use an alternative ZK credential scheme —
-  //       e.g., commit to a Poseidon-hashed key derivation path, or
-  //       use a JubJub-native signature scheme that Midnight already
-  //       supports natively through the PLONK/JubJub proof system?
-  //
-  // The pseudocode below documents the intended verification logic.
-  // It is commented out because the function does not compile today.
-  //
-  // assert(
-  //   verifyEd25519(en1WitnessPk(), challengeNonce(), en1SignatureR(), en1SignatureS()),
-  //   "EN-1 signature invalid"
-  // );
-  // assert(
-  //   verifyEd25519(cn2WitnessPk(), challengeNonce(), cn2SignatureR(), cn2SignatureS()),
-  //   "CN-2 signature invalid"
-  // );
-  // assert(
-  //   verifyEd25519(tn3WitnessPk(), challengeNonce(), tn3SignatureR(), tn3SignatureS()),
-  //   "TN-3 signature invalid"
-  // );
+// REVIEW with Midnight team: Can a non-circuit helper function be
+// defined in Compact and called from multiple circuits? Or must each
+// circuit be self-contained?
+//
+// ── Step 1 (BLOCKED): Ed25519 in-circuit signature verification ──
+//
+// CRITICAL REVIEW ITEM: verifyEd25519() does NOT exist in
+// CompactStandardLibrary as of Ledger 8.0 (March 2026).
+// Midnight's native wallet signing is Schnorr/secp256k1 (BIP340) —
+// not Ed25519. Ed25519 remains the correct scheme for SE chips
+// (universal hardware support), but in-circuit verification is an
+// open problem. Three resolution paths:
+//
+//   PATH A — verifyEd25519() builtin (cleanest):
+//     Ask Midnight team if this is planned. If so, await it.
+//     In-circuit: assert(verifyEd25519(pk, nonce, R, S), "Invalid signature")
+//
+//   PATH B — Hash commitment (buildable today):
+//     The SE chips produce persistentHash(pubkey ∥ nonce) instead of
+//     a full Ed25519 signature. The proof verifies the hash. The actual
+//     hardware binding is weaker but the circuit compiles today.
+//     In-circuit: assert(persistentHash<Bytes<64>>(pk ∥ nonce) == nodeCommitment, "Invalid")
+//
+//   PATH C — JubJub-native signing on SE chips:
+//     Configure SE chips to use JubJub EdDSA (Midnight's native curve).
+//     JubJub operations may be available as PLONK circuit primitives.
+//     Requires SE chip firmware/configuration change.
+//
+// ── Step 2 (COMPILABLE TODAY): Key binding ──
+//   assert(en1WitnessPk() == en1PublicKey, "EN-1 key mismatch")
+//   assert(cn2WitnessPk() == cn2PublicKey, "CN-2 key mismatch")
+//   assert(tn3WitnessPk() == tn3PublicKey, "TN-3 key mismatch")
+//   This proves the caller knows the registered keys — necessary but
+//   not sufficient for full authentication without Step 1.
+//
+// ── PER-ROLE CIRCUIT PATTERN (confirmed from Compact docs/examples) ──
+// A single circuit CANNOT conditionally return different fields to
+// different roles at runtime. Separate circuits per role are the
+// correct pattern. Each circuit has its own witness context and
+// disclose() calls. This is confirmed Midnight architecture.
 
-  // ── Step 2: Key binding — witness keys must match ledger commitments ──
-  // This is compilable today. It proves that the caller possesses the
-  // public keys registered at manufacture — a necessary condition for
-  // authenticity, though not sufficient without Step 1's signature check.
-  // Once the Ed25519 primitive question is resolved with the Midnight team,
-  // Step 1 and Step 2 together provide the full hardware authentication proof.
+// ── verifyPolice ──────────────────────────────────────────────
+// For: law_enforcement role
+// Discloses: status always. VIN only when STOLEN.
+// Purpose: Roadside check. Officer needs stolen/authentic confirmation.
+//          VIN is needed to initiate recovery/prosecution if stolen.
+export circuit verifyPolice(): [] {
+  // Step 2: Key binding (Step 1 pending Ed25519 resolution)
   assert(en1WitnessPk() == en1PublicKey, "EN-1 key mismatch — not the registered chip");
   assert(cn2WitnessPk() == cn2PublicKey, "CN-2 key mismatch — not the registered chip");
   assert(tn3WitnessPk() == tn3PublicKey, "TN-3 key mismatch — not the registered chip");
 
-  // ── Step 3: Role-based selective field disclosure ──
-  // status is a public ledger field — all roles receive it.
-  // disclose() here signals that this value is part of the
-  // circuit's public output (the proof's disclosed data).
-  // REVIEW: confirm disclose() usage for ledger reads vs. writes.
   disclose(status);
-
-  if (requesterRole == 0) {
-    // Police: status only. VIN disclosed only when vehicle is stolen.
-    if (status == VehicleStatus.STOLEN) {
-      disclose(vin);
-    }
-  } else if (requesterRole == 1) {
-    // Insurer: identity valid + ownership chain depth + service count
-    disclose(transferCount);
-    disclose(serviceCount);
-  } else if (requesterRole == 2) {
-    // Dealer: identity valid + transfer count + service count
-    disclose(transferCount);
-    disclose(serviceCount);
-  } else if (requesterRole == 3) {
-    // Government / DMV: status + VIN (for registration sync) + transfer count
+  if (status == VehicleStatus.STOLEN) {
     disclose(vin);
-    disclose(transferCount);
-  } else if (requesterRole == 4) {
-    // Owner: full view of own record
-    disclose(vin);
-    disclose(transferCount);
-    disclose(serviceCount);
-    disclose(mintTimestamp);
-    disclose(buildSpecHash);
   }
+}
+
+// ── verifyInsurer ─────────────────────────────────────────────
+// For: insurer role
+// Discloses: status, transferCount, serviceCount
+// Purpose: Policy inception and claim intake. Insurer needs identity
+//          confirmation, ownership chain depth, service history count.
+//          Does NOT receive VIN — insurer already has VIN from policy.
+export circuit verifyInsurer(): [] {
+  assert(en1WitnessPk() == en1PublicKey, "EN-1 key mismatch — not the registered chip");
+  assert(cn2WitnessPk() == cn2PublicKey, "CN-2 key mismatch — not the registered chip");
+  assert(tn3WitnessPk() == tn3PublicKey, "TN-3 key mismatch — not the registered chip");
+
+  disclose(status);
+  disclose(transferCount);
+  disclose(serviceCount);
+}
+
+// ── verifyDealer ──────────────────────────────────────────────
+// For: dealer role
+// Discloses: status, transferCount, serviceCount
+// Purpose: Used vehicle sale. Dealer needs authentic identity
+//          confirmation plus ownership and service history.
+//          Same disclosure as insurer — different commercial use case.
+export circuit verifyDealer(): [] {
+  assert(en1WitnessPk() == en1PublicKey, "EN-1 key mismatch — not the registered chip");
+  assert(cn2WitnessPk() == cn2PublicKey, "CN-2 key mismatch — not the registered chip");
+  assert(tn3WitnessPk() == tn3PublicKey, "TN-3 key mismatch — not the registered chip");
+
+  disclose(status);
+  disclose(transferCount);
+  disclose(serviceCount);
+}
+
+// ── verifyGovernment ──────────────────────────────────────────
+// For: government / DMV / registration authority role
+// Discloses: status, vin, transferCount
+// Purpose: Registration, import/export, compliance checks.
+//          Government needs VIN for registration sync and transfer count
+//          to maintain the registration record.
+export circuit verifyGovernment(): [] {
+  assert(en1WitnessPk() == en1PublicKey, "EN-1 key mismatch — not the registered chip");
+  assert(cn2WitnessPk() == cn2PublicKey, "CN-2 key mismatch — not the registered chip");
+  assert(tn3WitnessPk() == tn3PublicKey, "TN-3 key mismatch — not the registered chip");
+
+  disclose(status);
+  disclose(vin);
+  disclose(transferCount);
+}
+
+// ── verifyOwner ───────────────────────────────────────────────
+// For: owner role
+// Discloses: full record
+// Purpose: Owner's right to see their own vehicle's complete data.
+//          Also generates the ownership credential for point-of-sale
+//          (used as input to transferOwnership).
+//
+// Note: ownerSecret() witness proves ownership (hash matches on-chain
+// ownershipHash). The ZK proof confirms the caller owns this vehicle.
+export circuit verifyOwner(): [] {
+  assert(en1WitnessPk() == en1PublicKey, "EN-1 key mismatch — not the registered chip");
+  assert(cn2WitnessPk() == cn2PublicKey, "CN-2 key mismatch — not the registered chip");
+  assert(tn3WitnessPk() == tn3PublicKey, "TN-3 key mismatch — not the registered chip");
+
+  // Ownership proof — caller knows the preimage of the on-chain commitment
+  assert(
+    persistentHash<Bytes<32>>(ownerSecret()) == ownershipHash,
+    "Caller is not the registered owner"
+  );
+
+  disclose(status);
+  disclose(vin);
+  disclose(transferCount);
+  disclose(serviceCount);
+  disclose(mintTimestamp);
+  disclose(buildSpecHash);
+  disclose(factoryCode);
 }
 
 // ── transferOwnership ────────────────────────────────────────
@@ -376,13 +498,24 @@ export circuit transferOwnership(): [] {
 // ── flagStolen ───────────────────────────────────────────────
 // Law enforcement marks a vehicle stolen on-chain.
 //
-// REVIEW: authorityProof credential verification — confirm how
-// Midnight handles role/credential attestation for law enforcement
-// callers. May require a ZK credential circuit or a signed
-// attestation from a Midnight-registered authority key.
-export circuit flagStolen(authorityProof: Bytes<64>): [] {
-  // REVIEW: Placeholder — confirm credential verification pattern
-  // assert(isAuthorisedLawEnforcement(authorityProof), "Unauthorised");
+// ACCESS CONTROL — ownPublicKey() pattern (confirmed from example-kitties):
+//   Rather than a raw authorityProof Bytes<64>, the caller's wallet key is
+//   retrieved at runtime via ownPublicKey() and checked against an authorized
+//   law enforcement key registry. In the production contract:
+//
+//     assert(isRegisteredLawEnforcement(ownPublicKey()), "Unauthorised caller");
+//
+//   The registry of authorized law enforcement public keys lives in a separate
+//   VGM-1 governance contract (not per-vehicle). This circuit asserts membership.
+//
+// REVIEW with Midnight team:
+//   (a) Can a circuit call into another contract for registry lookups?
+//   (b) Or is the law enforcement key passed as a witness and validated against
+//       a root-of-trust commitment stored in this contract's ledger state?
+//   Option (b) is safer for this design stage.
+export circuit flagStolen(): [] {
+  // STUB: in production, validate ownPublicKey() against law enforcement registry
+  // assert(isRegisteredAuthority(ownPublicKey()), "Caller is not an authorised authority");
 
   assert(
     status == VehicleStatus.ACTIVE || status == VehicleStatus.RECOVERED,
@@ -390,6 +523,180 @@ export circuit flagStolen(authorityProof: Bytes<64>): [] {
   );
 
   status = VehicleStatus.STOLEN;
+}
+
+// ── markRecovered ────────────────────────────────────────────
+// Law enforcement confirms a previously stolen vehicle has been
+// recovered. Transitions STOLEN → RECOVERED.
+// RECOVERED vehicles can be transferred, verified, and eventually
+// decommissioned, but the history of the theft remains visible.
+//
+// REVIEW: Same credential verification question as flagStolen.
+export circuit markRecovered(): [] {
+  // STUB: validate ownPublicKey() against law enforcement registry
+  // assert(isRegisteredAuthority(ownPublicKey()), "Caller is not an authorised authority");
+
+  assert(
+    status == VehicleStatus.STOLEN,
+    "Vehicle must be in STOLEN status to mark as recovered"
+  );
+
+  status = VehicleStatus.RECOVERED;
+}
+
+// ── setRecallFlag ─────────────────────────────────────────────
+// Manufacturer places a recall or administrative hold on a vehicle.
+// Transitions ACTIVE → FLAGGED or RECOVERED → FLAGGED.
+//
+// A flagged vehicle can be verified (it is not stolen) but the flag
+// is disclosed to all roles. Cleared by the manufacturer after
+// recall service is completed.
+//
+// REVIEW: confirm how manufacturer authority credentials are
+// represented. Only the OEM with the matching factoryCode should
+// be able to flag their own vehicles.
+export circuit setRecallFlag(): [] {
+  // Manufacturer-only. Validate caller is the authorized minter wallet.
+  // REVIEW: confirm ownPublicKey() return type for hash comparison
+  assert(
+    persistentHash<Bytes<32>>(ownPublicKey() as Bytes<32>) == authorizedMinterKey,
+    "Only the authorized manufacturer can set a recall flag"
+  );
+
+  assert(
+    status == VehicleStatus.ACTIVE || status == VehicleStatus.RECOVERED,
+    "Only ACTIVE or RECOVERED vehicles can be recall-flagged"
+  );
+
+  status = VehicleStatus.FLAGGED;
+}
+
+// ── clearRecallFlag ───────────────────────────────────────────
+// Manufacturer clears a recall flag after service is completed.
+// Transitions FLAGGED → ACTIVE.
+//
+// Paired with setRecallFlag — same authority requirement.
+export circuit clearRecallFlag(): [] {
+  // Manufacturer-only — same key check as setRecallFlag
+  assert(
+    persistentHash<Bytes<32>>(ownPublicKey() as Bytes<32>) == authorizedMinterKey,
+    "Only the authorized manufacturer can clear a recall flag"
+  );
+
+  assert(
+    status == VehicleStatus.FLAGGED,
+    "Vehicle must be in FLAGGED status to clear recall"
+  );
+
+  status = VehicleStatus.ACTIVE;
+}
+
+// ── recordService ─────────────────────────────────────────────
+// Authorised service centre records a service event for this vehicle.
+// Increments serviceCount. No service content goes on-chain — only the
+// count. Service records are stored off-chain in the dealer/service
+// system and linked via the on-chain service count as a cross-reference.
+//
+// REVIEW: what level of credential authorisation is required here?
+// Any VGM-1 registered dealer/service centre, or must it be OEM-authorised?
+export circuit recordService(): [] {
+  // STUB: validate ownPublicKey() against registered service provider registry
+  // assert(isRegisteredServiceProvider(ownPublicKey()), "Caller is not a registered service provider");
+
+  assert(
+    status == VehicleStatus.ACTIVE || status == VehicleStatus.FLAGGED,
+    "Service can only be recorded for ACTIVE or FLAGGED vehicles"
+  );
+
+  serviceCount.increment(1);
+}
+
+// ── nodeKeyRotation ───────────────────────────────────────────
+// Hardware recovery: replaces the public key of a failed or recalled
+// SE chip node in the Vehicle Identity Token.
+//
+// This circuit corresponds to the POST /recovery/complete endpoint
+// in VAP-1 and the full multi-party procedure in hardware-recovery.md.
+//
+// Security properties:
+//   - Requires at least two surviving nodes co-signing the recovery nonce
+//     (proof of physical continuity with the registered vehicle)
+//   - Requires OEM authorisation credential (proof of legitimate repair)
+//   - For two-node recovery, requires insurer + government credentials too
+//
+// REVIEW: This is the highest-sensitivity circuit in the system.
+// The full multi-party authorisation pattern (surviving node proofs +
+// institutional co-signatures) needs to be designed with the Midnight
+// team. The placeholder below captures the structure only.
+//
+// rotatedNodeId: 0=EN-1, 1=CN-2, 2=TN-3
+//
+// SURVIVING NODE PROOF DESIGN:
+// The circuit must prove that surviving nodes co-signed the recovery nonce.
+// This is the hardest circuit in the system — it requires Ed25519 (or
+// alternative scheme) signature verification inside the ZK circuit.
+//
+// The same Ed25519 REVIEW item from verifyIdentity applies here.
+// Three design paths (same options as verifyIdentity Step 1):
+//
+//   PATH A — Wait for verifyEd25519() builtin (cleanest, needs Midnight team)
+//   PATH B — Hash-commitment proof of surviving nodes:
+//     Instead of verifying signatures in-circuit, the surviving nodes each
+//     produce a Poseidon hash of (their public key ∥ recovery nonce). The
+//     ZK proof verifies that these hashes were correctly computed by the
+//     registered nodes. The actual Ed25519 signatures are verified off-circuit
+//     by the proof server before feeding the commitment hashes as witnesses.
+//     This trades some in-circuit security for practicality.
+//   PATH C — JubJub-native signatures from SE chips:
+//     Configure SE chips to sign with JubJub EdDSA (native to Midnight's
+//     PLONK circuit). JubJub operations MAY be available as circuit primitives.
+//     Requires SE chip firmware change — viable for new manufacturing lines.
+//
+// PATH B STUB (most buildable today):
+//   surviving node proof = persistentHash(node_pubkey ∥ recovery_nonce)
+//   The witness provides the actual node pubkeys and nonce.
+//   The circuit verifies the hashes match the on-chain public keys.
+export circuit nodeKeyRotation(
+  rotatedNodeId:      Uint<8>,
+  newPublicKey:       Bytes<32>,
+  recoveryNonce:      Bytes<32>
+): [] {
+  // OEM authorization: caller must be the authorized manufacturer wallet
+  assert(
+    persistentHash<Bytes<32>>(ownPublicKey() as Bytes<32>) == authorizedMinterKey,
+    "OEM authorization required for key rotation"
+  );
+
+  assert(
+    status != VehicleStatus.DECOMMISSIONED,
+    "Cannot rotate keys on a decommissioned vehicle"
+  );
+
+  // ── Surviving node proof (PATH B stub) ───────────────────────
+  // The witnesses below provide the surviving nodes' key bindings
+  // against the recovery nonce. Full signature verification requires
+  // resolving the Ed25519/JubJub REVIEW item with Midnight team.
+  //
+  // For a single-node rotation (EN-1 failed), surviving nodes are CN-2 + TN-3:
+  if (rotatedNodeId == 0) {
+    // EN-1 being replaced — CN-2 and TN-3 must prove they signed the nonce
+    // STUB: assert surviving node key bindings
+    // assert(cn2WitnessPk() == cn2PublicKey, "CN-2 key mismatch");
+    // assert(tn3WitnessPk() == tn3PublicKey, "TN-3 key mismatch");
+    en1PublicKey = newPublicKey;
+  } else if (rotatedNodeId == 1) {
+    // CN-2 being replaced — EN-1 and TN-3 must prove they signed the nonce
+    // assert(en1WitnessPk() == en1PublicKey, "EN-1 key mismatch");
+    // assert(tn3WitnessPk() == tn3PublicKey, "TN-3 key mismatch");
+    cn2PublicKey = newPublicKey;
+  } else if (rotatedNodeId == 2) {
+    // TN-3 being replaced — EN-1 and CN-2 must prove they signed the nonce
+    // assert(en1WitnessPk() == en1PublicKey, "EN-1 key mismatch");
+    // assert(cn2WitnessPk() == cn2PublicKey, "CN-2 key mismatch");
+    tn3PublicKey = newPublicKey;
+  }
+  // NOTE: newPublicKey is a plain circuit parameter, not a witness value.
+  // It does not require disclose() — plain parameters are public circuit inputs.
 }
 
 // ── decommission ─────────────────────────────────────────────
@@ -404,11 +711,12 @@ export circuit flagStolen(authorityProof: Bytes<64>): [] {
 //
 // REVIEW: reason as Uint<8> — see Uint<N> type note above.
 export circuit decommission(
-  authorityProof: Bytes<64>,
-  reason:         Uint<8>    // 0=EOL, 1=total_loss, 2=salvage, 3=export
+  reason: Uint<8>   // 0=EOL, 1=total_loss, 2=salvage, 3=export
 ): [] {
-  // REVIEW: Placeholder — confirm credential verification pattern
-  // assert(isAuthorisedDecommissioner(authorityProof), "Unauthorised");
+  // Decommission can be called by: authorized manufacturer, authorized insurer,
+  // or government authority. Multi-role authorization:
+  // STUB: validate ownPublicKey() against a combined registry of authorized decommissioners
+  // assert(isRegisteredDecommissioner(ownPublicKey()), "Caller is not authorised to decommission");
 
   assert(
     status != VehicleStatus.DECOMMISSIONED,
