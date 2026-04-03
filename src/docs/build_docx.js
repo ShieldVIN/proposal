@@ -620,12 +620,15 @@ const doc = new Document({
       // ── SECTION 9: BUSINESS MODEL ──
       sectionLabel('09', 'Business Model'),
       heading1('Business Model'),
-      heading2('Revenue Streams'),
+      body('All client-facing fees are billed in fiat currency (USD/GBP/EUR) via card, direct debit, invoice, Apple Pay, or Google Pay. No crypto wallet is required from any client. ShieldVIN holds a DUST reserve internally to cover Midnight Network transaction fees — DUST is an operational cost, not a revenue stream.'),
+      spacer(),
+      heading2('Five Revenue Streams'),
       specTable([
-        ['Manufacturer Licensing', 'A per-vehicle fee at the point of manufacture for each Vehicle Identity Token minted. Estimated: $8–$25 per vehicle, with volume-based tiers. At 10% of global new vehicle production (8M units), this represents $64–$200M annually at full scale.'],
-        ['Verification API Access', 'Insurance companies, dealers, fleet operators, and others pay for API verification queries. Tiered pricing based on query volume and data access level. Estimated: $0.10–$2.50 per query. Law enforcement and government access provided at subsidised or government contract rates.'],
-        ['Midnight Network DUST', 'All transactions on Midnight Network require DUST for fees. A healthy vehicle identity ecosystem drives consistent, high-volume DUST consumption — supporting the Midnight Network economy and making this project a major institutional DUST consumer.'],
-        ['Enterprise Partnerships', 'Shared savings arrangements with insurance companies (proportion of claim reduction), premium data products for vehicle marketplace platforms, and fleet management integrations.'],
+        ['1. VIT Minting Fee', 'Per-vehicle fee charged to OEMs at the point of manufacture for each Vehicle Identity Token minted on Midnight Network. Volume tiers: Ultra-scale OEM (3M+/yr) $3–5, Large OEM (1M–3M/yr) $8–12, Mid OEM (100K–1M/yr) $12–18, Small OEM (<100K/yr) $20–25. Billed monthly by invoice.'],
+        ['2. Verification API', 'Per-query fee for insurers, finance lenders, and fleet operators using the ShieldVIN VAP-1 API. Status check: $0.15–$0.35. Ownership verification: $1.75–$2.50. Tamper check: $6–$12. Billed monthly via card or direct debit. Government access is not per-query — covered under Stream 5 enterprise contracts.'],
+        ['3. Dealer & Service Centre Portal Subscription', 'Monthly SaaS subscription for dealerships and authorised service centres. $199–$599/month by tier. Covers unlimited identity checks, ownership transfers, service record logging, and mileage recording for that portal. Card or direct debit.'],
+        ['4. Consumer Platform', '$5 flat fee per private ownership transfer (person-to-person sale). Paid by the seller or buyer via card, Apple Pay, or Google Pay. No subscription required. Private owners also receive 1 free identity check per month.'],
+        ['5. Enterprise & Government Contracts', 'Insurance claim-savings partnerships (revenue share on demonstrated fraud reduction). Government integration contracts: one-time integration fee plus annual maintenance per jurisdiction. Enterprise data products for fleet operators and vehicle marketplaces. Government agencies are never billed per-query — contract model only.'],
       ], ''),
 
       spacer(),
@@ -724,10 +727,12 @@ const doc = new Document({
             }))
           }),
           ...([
-            ['Vehicle Minting Fees', '$0.1M', '$0.8M', '$4.2M', '$18.5M', '$58M'],
-            ['Verification API', '$0.05M', '$0.3M', '$1.8M', '$9.2M', '$31M'],
-            ['Insurance & Enterprise', '$0M', '$0.1M', '$0.9M', '$5.4M', '$19M'],
-            ['Total Revenue', '$0.15M', '$1.2M', '$6.9M', '$33.1M', '$108M'],
+            ['1. VIT Minting', '$0.18M', '$1.00M', '$5.20M', '$18.00M', '$42.00M'],
+            ['2. Verification API', '$0.05M', '$0.25M', '$1.50M', '$8.00M', '$25.00M'],
+            ['3. Dealer Portal Subs', '$0.00M', '$0.60M', '$3.50M', '$14.90M', '$39.60M'],
+            ['4. Consumer Platform', '$0.00M', '$0.05M', '$0.35M', '$1.60M', '$6.30M'],
+            ['5. Enterprise & Gov', '$0.00M', '$0.10M', '$2.00M', '$5.50M', '$18.00M'],
+            ['Total Revenue', '$0.23M', '$2.00M', '$12.55M', '$48.00M', '$131.00M'],
           ].map(([stream, ...years]) => new TableRow({
             children: [
               new TableCell({ borders, width: { size: 2400, type: WidthType.DXA }, shading: { fill: stream === 'Total Revenue' ? DARK_TEXT : 'FFFFFF', type: ShadingType.CLEAR }, margins: { top: 80, bottom: 80, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: stream, size: 20, bold: stream === 'Total Revenue', color: stream === 'Total Revenue' ? 'FFFFFF' : DARK_TEXT, font: 'Arial' })] })] }),
@@ -743,7 +748,7 @@ const doc = new Document({
         ['Phase 1 (0–12 months)', '$3M–$5M for technical PoC, standards body formation, regulatory scoping, initial manufacturer engagement.'],
         ['Phase 2 (12–30 months)', '$9M–$13M for pilot deployment, live vehicle programme, law enforcement integration, API commercial launch.'],
         ['Total Phase 1+2', '$12M–$18M. Fundable through Midnight Network ecosystem grant combined with strategic investment from 1–2 founding manufacturer partners and an insurance co-investor.'],
-        ['Payback horizon', 'Commercial self-sufficiency projected in Year 3 based on conservative enrollment assumptions. Year 5 revenue of $108M+ provides strong return on Phase 1+2 investment.'],
+        ['Payback horizon', 'Commercial self-sufficiency projected in Year 3 based on conservative enrollment assumptions. Year 5 revenue of $131M provides strong return on Phase 1+2 investment across all five revenue streams.'],
       ], ''),
 
       pageBreak(),
@@ -833,7 +838,7 @@ const doc = new Document({
         ['Secure Element (SE)', 'A tamper-resistant microprocessor chip that stores cryptographic keys and performs security operations in hardware isolation. Keys inside an SE cannot be extracted even if the surrounding device is physically disassembled. Used in SIM cards, passports, payment chips, and — in ShieldVIN — vehicle identity nodes.'],
         ['Zero-Knowledge Proof (ZK)', 'A cryptographic technique that lets one party prove a statement is true to another party without revealing any information beyond the truth of the statement itself. Example: proving a vehicle is not stolen without revealing who owns it, where it has been, or any other private data.'],
         ['Compact', 'The smart contract programming language developed by Midnight Network. Compact is designed specifically for writing ZK-native contracts — programs where privacy guarantees are enforced at the language level, not added as an afterthought. ShieldVIN\'s identity contract is written in Compact.'],
-        ['DUST', 'The transaction fee token on Midnight Network. Every on-chain operation — including ShieldVIN identity proof submissions — consumes a small amount of DUST. DUST is an operational cost for ShieldVIN, not a revenue stream. Revenue comes from manufacturer minting fees and API access.'],
+        ['DUST', 'The transaction fee token on Midnight Network. Every on-chain operation — minting, ownership transfer, service recording, status flags — consumes a small amount of DUST. DUST is an operational cost held internally by ShieldVIN, not a revenue stream and never billed to any client. All client-facing fees are in fiat currency (USD/GBP/EUR).'],
         ['VIN', 'Vehicle Identification Number. A 17-character code assigned to every motor vehicle at manufacture, used globally by insurers, law enforcement, and registries. Currently just a stamped metal plate — physically easy to replicate, which is the core vulnerability ShieldVIN addresses.'],
         ['VIT (Vehicle Identity Token)', 'The on-chain token minted at manufacture that represents a vehicle\'s cryptographic identity on Midnight Network. Contains no personal data — only a binding commitment to the three hardware node keys, the VIN, and the minting event. Defined by the VIT-1 standard.'],
         ['VSE-1', 'Vehicle Secure Element Standard. The proposed hardware specification for the three SE chips embedded in ShieldVIN-enrolled vehicles. Defines tamper response behaviour, key management, inter-node communication encryption, and firmware update protocols including post-quantum crypto-agility.'],
